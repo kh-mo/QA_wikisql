@@ -1,3 +1,8 @@
+# Requirement
+
+tensorflow 1.3.0
+python 3.6
+
 # Deep-Learning
 
 1. Image Classification
