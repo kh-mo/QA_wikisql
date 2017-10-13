@@ -1,7 +1,7 @@
 # Requirement
 
-tensorflow 1.3.0
-python 3.6
+> * tensorflow 1.3.0
+> * python 3.5.2
 
 # Deep-Learning
 
