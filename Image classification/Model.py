@@ -1,5 +1,6 @@
+import os
 import sys
-sys.path.append("S:/github/Deep Learning/Image classification/")
+sys.path.append(os.getcwd() + "/image classification/")
 import Block as B
 import numpy as np
 import tensorflow as tf
@@ -58,3 +59,7 @@ class Basic():
             train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
     probability = tf.nn.softmax(fc3)
+
+class Alexnet():
+    def __init__(self):
+        print("아직 미완성입니다.")

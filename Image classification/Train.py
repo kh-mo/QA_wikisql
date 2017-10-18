@@ -1,6 +1,7 @@
 ## 패키지 import
+import os
 import sys
-sys.path.append("S:/github/Deep Learning/Image classification/")
+sys.path.append(os.getcwd() + "/image classification/")
 import Model
 import Load_data
 import numpy as np
