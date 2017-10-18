@@ -33,3 +33,4 @@ for i in range(201):
         print("step : %d, train accuracy : %g, train loss : %g"%(i, acc, loss))
 
 tf.train.Saver().save(sess, pre_train_path)
+
