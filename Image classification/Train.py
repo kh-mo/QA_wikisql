@@ -7,9 +7,9 @@ import Load_data
 import numpy as np
 import tensorflow as tf
 
-pre_train_path = "S:/github/Deep Learning/Image classification/Pretrain/Basic/"
-train_path = "S:/github/Deep Learning/Image classification/Data/train"
-log_path = "S:/github/Deep Learning/Image classification/Log"
+pre_train_path = os.getcwd() + "/Image classification/Pretrain/Basic/"
+train_path = os.getcwd() + "/Image classification/Data/train"
+log_path = os.getcwd() + "/Image classification/Log"
 train_x, train_y = Load_data.Train_generator(train_path)
 
 def feed_dict(train):
@@ -33,4 +33,3 @@ for i in range(201):
         print("step : %d, train accuracy : %g, train loss : %g"%(i, acc, loss))
 
 tf.train.Saver().save(sess, pre_train_path)
-

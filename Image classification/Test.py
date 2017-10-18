@@ -7,8 +7,8 @@ import Load_data
 import numpy as np
 import tensorflow as tf
 
-pre_train_path = "S:/github/Deep Learning/Image classification/Pretrain/Basic/"
-test_path = "S:/github/Deep Learning/Image classification/Data/test"
+pre_train_path = os.getcwd() + "/Image classification/Pretrain/Basic/"
+test_path = os.getcwd() + "/Image classification/Data/test"
 test_x = Load_data.Test_generator(test_path)
 
 model = Model.Basic()
