@@ -63,3 +63,15 @@ class Basic():
 class Alexnet():
     def __init__(self):
         print("아직 미완성입니다.")
+
+class Vggnet():
+    def __init__(self):
+        print("아직 미완성입니다.")
+
+class Googlexnet():
+    def __init__(self):
+        print("아직 미완성입니다.")
+
+class Resnet():
+    def __init__(self):
+        print("아직 미완성입니다.")
