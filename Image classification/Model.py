@@ -75,4 +75,3 @@ class Googlexnet():
 class Resnet():
     def __init__(self):
         print("아직 미완성입니다.")
-
