@@ -41,7 +41,7 @@ import logging
 import numpy as np
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
-sys.path.append("S:/class/seqtoseq/")
+sys.path.append(os.getcwd()+"Text Summarization/")
 import data_utils
 import seq2seq_model
 
