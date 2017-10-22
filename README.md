@@ -7,6 +7,8 @@
 
 1. Image Classification
 > * Block, Load_data, Model을 import하여 Train을 실행시키고 저장된 모델을 불러와 Test 실행.
+2. Text Summarization
+> * 진행 중....
 
 # Reference
 > * [Alexnet:ImageNet Classification with Deep Convolutional Neural Networks](https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf)
