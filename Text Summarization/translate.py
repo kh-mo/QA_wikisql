@@ -114,7 +114,7 @@ def read_data(source_path, target_path, max_size=None):
 def create_model(session, forward_only):
   """Create translation model and initialize or load parameters in session."""
   dtype = tf.float16 if FLAGS.use_fp16 else tf.float32
-  ################
+  ###################
   forward_only = False
   model = seq2seq_model.Seq2SeqModel(
       FLAGS.from_vocab_size,
