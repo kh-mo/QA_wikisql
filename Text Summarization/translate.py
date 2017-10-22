@@ -41,7 +41,7 @@ import logging
 import numpy as np
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
-sys.path.append(os.getcwd()+"Text Summarization/")
+sys.path.append(os.getcwd()+"/Text Summarization/")
 import data_utils
 import seq2seq_model
 
@@ -114,6 +114,8 @@ def read_data(source_path, target_path, max_size=None):
 def create_model(session, forward_only):
   """Create translation model and initialize or load parameters in session."""
   dtype = tf.float16 if FLAGS.use_fp16 else tf.float32
+  ################
+  forward_only = False
   model = seq2seq_model.Seq2SeqModel(
       FLAGS.from_vocab_size,
       FLAGS.to_vocab_size,
@@ -158,9 +160,6 @@ def train():
         to_dev_data,
         FLAGS.from_vocab_size,
         FLAGS.to_vocab_size)
-    ############################################################################
-    from_train, to_train, from_dev, to_dev, _, _ = prepare_data(data_dir, from_train_path, to_train_path, from_dev_path, to_dev_path, en_vocabulary_size,
-                 fr_vocabulary_size, None)
   else:
       # Prepare WMT data.
       print("Preparing WMT data in %s" % FLAGS.data_dir)
@@ -169,6 +168,7 @@ def train():
   with tf.Session() as sess:
     # Create model.
     print("Creating %d layers of %d units." % (FLAGS.num_layers, FLAGS.size))
+    sess = tf.Session()
     model = create_model(sess, False)
 
     # Read data into buckets and compute their sizes.
