@@ -24,8 +24,16 @@ import random
 import numpy as np
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
-
+import os
+import sys
+sys.path.append(os.getcwd()+"/Text Summarization/")
 import data_utils
+
+
+model = Seq2SeqModel(source_vocab_size=40000, target_vocab_size=40000,
+                       buckets=[(5, 10), (10, 15), (20, 25), (40, 50)], size=1024, num_layers=3,
+                       max_gradient_norm=5.0, batch_size=64, learning_rate=0.5,
+                       learning_rate_decay_factor=0.99, forward_only=False, dtype=tf.float32)
 
 
 class Seq2SeqModel(object):
@@ -84,10 +92,8 @@ class Seq2SeqModel(object):
     self.target_vocab_size = target_vocab_size
     self.buckets = buckets
     self.batch_size = batch_size
-    self.learning_rate = tf.Variable(
-        float(learning_rate), trainable=False, dtype=dtype)
-    self.learning_rate_decay_op = self.learning_rate.assign(
-        self.learning_rate * learning_rate_decay_factor)
+    self.learning_rate = tf.Variable(float(learning_rate), trainable=False, dtype=dtype)
+    self.learning_rate_decay_op = self.learning_rate.assign(self.learning_rate * learning_rate_decay_factor)
     self.global_step = tf.Variable(0, trainable=False)
 
     # If we use sampled softmax, we need an output projection.
@@ -313,3 +319,5 @@ class Seq2SeqModel(object):
           batch_weight[batch_idx] = 0.0
       batch_weights.append(batch_weight)
     return batch_encoder_inputs, batch_decoder_inputs, batch_weights
+
+

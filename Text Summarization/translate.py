@@ -129,17 +129,17 @@ def create_model(session, forward_only):
       forward_only=forward_only,
       dtype=dtype)
   """model = seq2seq_model.Seq2SeqModel(
-      40000,
-      40000,
-      [(5, 10), (10, 15), (20, 25), (40, 50)],
-      1024,
-      3,
-      5.0,
-      64,
-      0.5,
-      0.99,
-      False,
-      tf.float32)"""
+      FLAGS.from_vocab_size = 40000,
+      FLAGS.to_vocab_size = 40000,
+      _buckets = [(5, 10), (10, 15), (20, 25), (40, 50)],
+      FLAGS.size = 1024,
+      FLAGS.num_layers = 3,
+      FLAGS.max_gradient_norm = 5.0,
+      FLAGS.batch_size = 64,
+      FLAGS.learning_rate = 0.5,
+      FLAGS.learning_rate_decay_factor = 0.99,
+      forward_only = False,
+      dtype = tf.float32)"""
   ckpt = tf.train.get_checkpoint_state(FLAGS.train_dir)
   if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
     print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
