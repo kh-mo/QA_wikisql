@@ -1,12 +1,42 @@
-import tensorflow as tf
+import os
+import sys
+sys.path.append(os.getcwd()+"/Text Summarization/")
+import time
 import numpy as np
 import tool as tool
-import time
+import tensorflow as tf
+import pandas as pd
 
 # data loading
-data_path = 'C:/newscorpus.csv'
-title, contents = tool.loading_data(data_path, eng=False, num=False, punc=False)
-word_to_ix, ix_to_word = tool.make_dict_all_cut(title+contents, minlength=0, maxlength=3, jamo_delete=True)
+data_path = 'C:/Users/user/Desktop/2016newscorpus2.csv'
+
+def loading_data(data_path):
+    # R에서 title과 contents만 csv로 저장한걸 불러와서 제목과 컨텐츠로 분리
+    # write.csv(corpus, data_path, fileEncoding='utf-8', row.names=F)
+    corpus = np.array(pd.read_table(data_path, sep=",", encoding="utf-8"))
+    title = []
+    body = []
+    for idx, doc in enumerate(corpus):
+        title.append(doc[0].split())
+        body.append(doc[1].split())
+        if idx % 100000 == 0:
+            print('%d docs' % (idx))
+    return title, body
+
+title, contents = loading_data(data_path)
+input = title+contents
+def word_to_idx(input):
+    idx = []
+    for i in range(len(input)):
+        idx = list(set(idx+input[i]))
+        list(range(len(idx)))
+    return idx
+
+# word_to_ix, ix_to_word = tool.make_dict_all_cut(title+contents, minlength=0, maxlength=3, jamo_delete=True)
+word_to_ix = word_to_idx(title + contents)
+
+
+
 
 # parameters
 multi = True
