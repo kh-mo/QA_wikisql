@@ -25,41 +25,41 @@ def loading_data(data_path):
 
 title, contents = loading_data(data_path)
 input = title+contents
-def word_to_idx(input):
-    idx = []
+
+def convert_dic(input):
+    uniq_word = []
     for i in range(len(input)):
-        idx = list(set(idx+input[i]))
-        list(range(len(idx)))
-    return idx
+        uniq_word = list(set(uniq_word+input[i]))
+    uniq_word.sort()
+    idx = list(range(len(uniq_word)))
+    word_to_idx = dict(zip(uniq_word, idx))
+    idx_to_word = dict(zip(idx, uniq_word))
+    return word_to_idx, idx_to_word
 
 # word_to_ix, ix_to_word = tool.make_dict_all_cut(title+contents, minlength=0, maxlength=3, jamo_delete=True)
-word_to_ix = word_to_idx(title + contents)
-
-
-
+word_to_idx, idx_to_word = convert_dic(title + contents)
 
 # parameters
 multi = True
-forward_only = False
+forward_only = False ##training False / testing True
 hidden_size = 300
-vocab_size = len(ix_to_word)
+vocab_size = len(idx_to_word)
 num_layers = 3
 learning_rate = 0.001
 batch_size = 16
-encoder_size = 100
-decoder_size = tool.check_doclength(title,sep=True) # (Maximum) number of time steps in this batch
+encoder_size = 10
+# decoder_size = tool.check_doclength(title,sep=True) # (Maximum) number of time steps in this batch
+decoder_size = 5
 steps_per_checkpoint = 10
 
 # transform data
-encoderinputs, decoderinputs, targets_, targetweights = \
-    tool.make_inputs(contents, title, word_to_ix,
+encoderinputs, decoderinputs, targets_, targetweights = tool.make_inputs(contents, title, word_to_idx,
                      encoder_size=encoder_size, decoder_size=decoder_size, shuffle=False)
 
 class seq2seq(object):
 
-    def __init__(self, multi, hidden_size, num_layers, forward_only,
-                 learning_rate, batch_size,
-                 vocab_size, encoder_size, decoder_size):
+    def __init__(self, multi, hidden_size, num_layers, forward_only, learning_rate,
+                 batch_size, vocab_size, encoder_size, decoder_size):
 
         # variables
         self.source_vocab_size = vocab_size
@@ -67,22 +67,39 @@ class seq2seq(object):
         self.batch_size = batch_size
         self.encoder_size = encoder_size
         self.decoder_size = decoder_size
-        self.learning_rate = tf.Variable(float(learning_rate), trainable=False)
-        self.global_step = tf.Variable(0, trainable=False)
+        self.learning_rate = tf.Variable(float(learning_rate), trainable=False, name="learning_rate")
+        self.global_step = tf.Variable(0, trainable=False, name="global_step")
+
+        source_vocab_size = vocab_size
+        target_vocab_size = vocab_size
+        batch_size = batch_size
+        encoder_size = encoder_size
+        decoder_size = decoder_size
+        learning_rate = tf.Variable(float(learning_rate), trainable=False, name="learning_rate")
+        global_step = tf.Variable(0, trainable=False, name="global_step")
 
         # networks
-        W = tf.Variable(tf.random_normal([hidden_size, vocab_size]))
-        b = tf.Variable(tf.random_normal([vocab_size]))
+        W = tf.Variable(tf.random_normal([hidden_size, vocab_size]), name="output_to_hidden_weight")
+        b = tf.Variable(tf.random_normal([vocab_size]), name="output_to_hidden_bias")
         output_projection = (W, b)
-        self.encoder_inputs = [tf.placeholder(tf.int32, [batch_size]) for _ in range(encoder_size)]  # 인덱스만 있는 데이터 (원핫 인코딩 미시행)
-        self.decoder_inputs = [tf.placeholder(tf.int32, [batch_size]) for _ in range(decoder_size)]
-        self.targets = [tf.placeholder(tf.int32, [batch_size]) for _ in range(decoder_size)]
-        self.target_weights = [tf.placeholder(tf.float32, [batch_size]) for _ in range(decoder_size)]
+        self.encoder_inputs = [tf.placeholder(tf.int32, [batch_size], name="encoder_inputs"+str(_)) for _ in range(encoder_size)]  # 인덱스만 있는 데이터 (원핫 인코딩 미시행)
+        self.decoder_inputs = [tf.placeholder(tf.int32, [batch_size], name="decoder_inputs"+str(_)) for _ in range(decoder_size)]
+        self.targets = [tf.placeholder(tf.int32, [batch_size], name="targets"+str(_)) for _ in range(decoder_size)]
+        self.target_weights = [tf.placeholder(tf.float32, [batch_size], name="target_weight"+str(_)) for _ in range(decoder_size)]
 
+        encoder_inputs = [tf.placeholder(tf.float32, [batch_size, source_vocab_size], name="encoder_inputs" + str(_)) for _ in
+                               range(encoder_size)]  # 인덱스만 있는 데이터 (원핫 인코딩 미시행)
+        decoder_inputs = [tf.placeholder(tf.float32, [batch_size, target_vocab_size], name="decoder_inputs" + str(_)) for _ in
+                               range(decoder_size)]
+        targets = [tf.placeholder(tf.float32, [batch_size], name="targets" + str(_)) for _ in range(decoder_size)]
+        target_weights = [tf.placeholder(tf.float32, [batch_size], name="target_weight" + str(_)) for _ in
+                               range(decoder_size)]
         # models
         if multi:
-            single_cell = tf.nn.rnn_cell.GRUCell(num_units=hidden_size)
-            cell = tf.nn.rnn_cell.MultiRNNCell([single_cell] * num_layers)
+            # single_cell = tf.nn.rnn_cell.GRUCell(num_units=hidden_size)
+            single_cell = tf.nn.rnn_cell.LSTMCell(num_units=hidden_size)
+            cell = tf.nn.rnn_cell.MultiRNNCell([single_cell, single_cell])
+            # cell = tf.nn.rnn_cell.MultiRNNCell([single_cell]*num_layers, state_is_tuple=True)
         else:
             cell = tf.nn.rnn_cell.GRUCell(num_units=hidden_size)
             #cell = tf.nn.rnn_cell.LSTMCell(num_units=hidden_size)
@@ -95,6 +112,21 @@ class seq2seq(object):
                 embedding_size=hidden_size,
                 output_projection=output_projection,
                 feed_previous=False)
+
+
+            outputs, states = tf.contrib.legacy_seq2seq.basic_rnn_seq2seq(encoder_inputs, decoder_inputs, single_cell)
+            outputs, states = tf.contrib.legacy_seq2seq.basic_rnn_seq2seq(encoder_inputs, decoder_inputs, cell)
+
+
+            logits = [tf.matmul(output_element, output_projection[0]) + output_projection[1] for output_element in outputs]
+
+            outputs, states = tf.nn.seq2seq.embedding_attention_seq2seq(encoder_inputs, decoder_inputs, cell,
+                                                                        num_encoder_symbols = vocab_size,
+                                                                        num_decoder_symbols = vocab_size,
+                                                                        embedding_size = hidden_size,
+                                                                        output_projection = output_projection,
+                                                                        feed_previous = False)
+
 
             self.logits = [tf.matmul(output, output_projection[0]) + output_projection[1] for output in self.outputs]
             self.loss = []
@@ -136,11 +168,10 @@ class seq2seq(object):
             return output[0:] # outputs
 
 sess = tf.Session()
-model = seq2seq(multi=multi, hidden_size=hidden_size, num_layers=num_layers,
-                    learning_rate=learning_rate, batch_size=batch_size,
-                    vocab_size=vocab_size,
-                    encoder_size=encoder_size, decoder_size=decoder_size,
-                    forward_only=forward_only)
+train_writer = tf.summary.FileWriter("C:/Users/user/Desktop/tmp", sess.graph)
+model = seq2seq(multi=multi, hidden_size=hidden_size, num_layers=num_layers, learning_rate=learning_rate,
+                batch_size=batch_size, vocab_size=vocab_size, encoder_size=encoder_size, decoder_size=decoder_size,
+                forward_only=forward_only)
 sess.run(tf.global_variables_initializer())
 step_time, loss = 0.0, 0.0
 current_step = 0
@@ -312,3 +343,126 @@ def make_batch(encoder_inputs, decoder_inputs, targets, target_weights):
         result_targets.append(targets[:, j])
         result_target_weights.append(target_weights[:, j])
     return result_encoder_inputs, result_decoder_inputs, result_targets, result_target_weights
+
+
+
+
+
+
+
+
+
+####################################################################################
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+
+# data loading
+data_path = 'C:/Users/user/Desktop/2016newscorpus2.csv'
+
+def loading_data(data_path):
+    # R에서 title과 contents만 csv로 저장한걸 불러와서 제목과 컨텐츠로 분리
+    # write.csv(corpus, data_path, fileEncoding='utf-8', row.names=F)
+    corpus = np.array(pd.read_table(data_path, sep=",", encoding="utf-8"))
+    title = []
+    body = []
+    for idx, doc in enumerate(corpus):
+        title.append(doc[0].split())
+        body.append(doc[1].split())
+        if idx % 100000 == 0:
+            print('%d docs' % (idx))
+    return np.asarray(title), np.asarray(body)
+
+title, contents = loading_data(data_path)
+input = title + contents
+
+def convert_dic(input):
+    uniq_word = []
+    for i in range(len(input)):
+        uniq_word = list(set(uniq_word+input[i]))
+    uniq_word.sort()
+    idx = list(range(len(uniq_word)))
+    word_to_idx = dict(zip(uniq_word, idx))
+    idx_to_word = dict(zip(idx, uniq_word))
+    return word_to_idx, idx_to_word
+
+# word_to_ix, ix_to_word = tool.make_dict_all_cut(title+contents, minlength=0, maxlength=3, jamo_delete=True)
+word_to_idx, idx_to_word = convert_dic(title + contents)
+
+def get_word_idx(batch):
+    batch_list = []
+    for sentence in batch:
+        sentence_list = []
+        for word in sentence:
+            sentence_list.append(word_to_idx.get(word))
+        batch_list.append(sentence_list)
+    return batch_list
+
+def feed_dict(train):
+    if train == True:
+        batch_idx = np.random.choice(len(title), 2, False)
+        en_ = tf.one_hot(get_word_idx(contents[batch_idx]), depth=encoder_size)
+        de_ = tf.one_hot(get_word_idx(title[batch_idx]), depth=decoder_size)
+        y_ = tf.one_hot(get_word_idx(title[batch_idx]), depth=decoder_size)
+        return {encoder_inputs: en_, decoder_inputs: de_, target: y_}
+    else:
+        batch_idx = np.random.choice(len(title), 2, False)
+        en_ = tf.one_hot(get_word_idx(contents[batch_idx]), depth=encoder_size)
+        de_ = tf.one_hot(get_word_idx(title[batch_idx]), depth=decoder_size)
+        y_ = tf.one_hot(get_word_idx(title[batch_idx]), depth=decoder_size)
+        return {encoder_inputs: en_, decoder_inputs: de_, target: y_}
+
+# parameters
+forward_only = False ##training False / testing True
+hidden_size = 300
+vocab_size = len(idx_to_word)
+num_layers = 3
+learning_rate = 0.001
+batch_size = 16
+encoder_size = 10
+# decoder_size = tool.check_doclength(title,sep=True) # (Maximum) number of time steps in this batch
+decoder_size = 5
+steps_per_checkpoint = 10
+
+source_vocab_size = vocab_size
+target_vocab_size = vocab_size
+batch_size = batch_size
+encoder_size = encoder_size
+decoder_size = decoder_size
+learning_rate = tf.Variable(float(learning_rate), trainable=False, name="learning_rate")
+global_step = tf.Variable(0, trainable=False, name="global_step")
+
+# networks
+W = tf.Variable(tf.random_normal([hidden_size, vocab_size]), name="output_to_hidden_weight")
+b = tf.Variable(tf.random_normal([vocab_size]), name="output_to_hidden_bias")
+output_projection = (W, b)
+
+encoder_inputs = [tf.placeholder(tf.float32, [batch_size, source_vocab_size], name="encoder_inputs" + str(_)) for _ in range(encoder_size)]  # 인덱스만 있는 데이터 (원핫 인코딩 미시행)
+decoder_inputs = [tf.placeholder(tf.float32, [batch_size, target_vocab_size], name="decoder_inputs" + str(_)) for _ in range(decoder_size)]
+targets = [tf.placeholder(tf.float32, [batch_size, target_vocab_size], name="targets" + str(_)) for _ in range(decoder_size)]
+# target_weights = [tf.placeholder(tf.float32, [batch_size], name="target_weight" + str(_)) for _ in range(decoder_size)]
+
+single_cell = tf.nn.rnn_cell.LSTMCell(num_units=hidden_size)
+
+outputs, states = tf.contrib.legacy_seq2seq.basic_rnn_seq2seq(encoder_inputs, decoder_inputs, single_cell)
+logits = [tf.matmul(output_element, output_projection[0]) + output_projection[1] for output_element in outputs]
+loss = []
+
+# for logit, target, target_weight in zip(logits, targets, target_weights):
+for logit, target in zip(logits, targets):
+    ce_loss = tf.nn.softmax_cross_entropy_with_logits(labels=target, logits=logit)
+    # ce_loss = tf.nn.weighted_cross_entropy_with_logits(targets=target, logits=logit, pos_weight=target_weight)
+    loss.append(ce_loss)
+    # loss.append(ce_loss * target_weight)
+cost = tf.add_n(loss)
+# cost = tf.reduce_mean(tf.add_n(loss))
+train_op = tf.train.AdamOptimizer(learning_rate).minimize(cost)
+
+# loss = tf.contrib.legacy_seq2seq.sequence_loss(logits=logits, targets=targets, weights=target_weights)
+
+sess = tf.Session()
+train_writer = tf.summary.FileWriter("C:/Users/user/Desktop/tmp", sess.graph)
+sess.run(tf.global_variables_initializer())
+
+
+sess.run([train_op, cost], feed_dict(True))
