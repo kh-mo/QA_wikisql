@@ -596,3 +596,4 @@ sess.run([train_op, cost], feed_dict(True))
 ## attention 모델 추가
 ## lstm 셀
 ## 멀티 레이터
+## dynamic rnn 사용?
