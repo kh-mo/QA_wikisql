@@ -83,9 +83,6 @@ with detection_graph.as_default():
               plt.imshow(image_np)
 
 
-
-#
-#
 # # show graph
 # # tensorboard --logdir=./
 # sess = tf.InteractiveSession(graph=detection_graph)
