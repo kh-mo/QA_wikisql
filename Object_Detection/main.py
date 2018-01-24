@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.append(os.getcwd() + "/object_detection/")
+sys.path.append(os.getcwd() + "/Object_Detection/")
 import tarfile
 import numpy as np
 from PIL import Image
@@ -9,19 +9,19 @@ from utils import label_map_util
 from matplotlib import pyplot as plt
 from utils import visualization_utils as vis_util
 
-# MODEL_FILE = os.getcwd() + "/object_detection/1. mmm/ssd_mobilenet_v1_coco_2017_11_17.tar.gz"
-# PATH_TO_CKPT = os.getcwd() + "/object_detection/1. mmm/ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb"
-# PATH_TO_LABELS = os.getcwd() + "/object_detection/data/mscoco_label_map.pbtxt"
-MODEL_FILE = os.getcwd() + "/object_detection/1. mmm/faster_rcnn_resnet50_coco_2017_11_08.tar.gz"
-PATH_TO_CKPT = os.getcwd() + "/object_detection/1. mmm/faster_rcnn_resnet50_coco_2017_11_08/frozen_inference_graph.pb"
-PATH_TO_LABELS = os.getcwd() + "/object_detection/data/mmm_label_map.pbtxt"
-# PATH_TO_LABELS = os.getcwd() + "/object_detection/data/mscoco_label_map.pbtxt"
+# MODEL_FILE = os.getcwd() + "/Object_Detection/1. mmm/ssd_mobilenet_v1_coco_2017_11_17.tar.gz"
+# PATH_TO_CKPT = os.getcwd() + "/Object_Detection/1. mmm/ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb"
+# PATH_TO_LABELS = os.getcwd() + "/Object_Detection/data/mscoco_label_map.pbtxt"
+MODEL_FILE = os.getcwd() + "/Object_Detection/1. mmm/faster_rcnn_resnet50_coco_2017_11_08.tar.gz"
+PATH_TO_CKPT = os.getcwd() + "/Object_Detection/1. mmm/faster_rcnn_resnet50_coco_2017_11_08/frozen_inference_graph.pb"
+PATH_TO_LABELS = os.getcwd() + "/Object_Detection/data/mmm_label_map.pbtxt"
+# PATH_TO_LABELS = os.getcwd() + "/Object_Detection/data/mscoco_label_map.pbtxt"
 
 tar_file = tarfile.open(MODEL_FILE)
 for file in tar_file.getmembers():
     file_name = os.path.basename(file.name)
     if 'frozen_inference_graph.pb' in file_name:
-        tar_file.extract(file, os.getcwd() + "/object_detection/1. mmm/")
+        tar_file.extract(file, os.getcwd() + "/Object_Detection/1. mmm/")
 
 detection_graph = tf.Graph()
 with detection_graph.as_default():
@@ -39,7 +39,7 @@ def load_image_into_numpy_array(image):
     (im_width, im_height) = image.size
     return np.array(image.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
 
-PATH_TO_TEST_IMAGES_DIR = os.getcwd() + "/object_detection/test_images"
+PATH_TO_TEST_IMAGES_DIR = os.getcwd() + "/Object_Detection/test_images"
 TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(3, 4)]
 
 # Size, in inches, of the output images.
@@ -87,4 +87,4 @@ with detection_graph.as_default():
 # # tensorboard --logdir=./
 # sess = tf.InteractiveSession(graph=detection_graph)
 # sess.run(tf.global_variables_initializer())
-# train_writer = tf.summary.FileWriter(os.getcwd() + "/object_detection/", sess.graph)
+# train_writer = tf.summary.FileWriter(os.getcwd() + "/Object_Detection/", sess.graph)
