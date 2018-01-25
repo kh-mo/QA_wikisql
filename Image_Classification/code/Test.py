@@ -1,11 +1,11 @@
 ## 패키지 import
 import os
 import sys
-sys.path.append(os.getcwd() + "/image classification/")
 import Model
 import Load_data
 import numpy as np
 import tensorflow as tf
+sys.path.append(os.getcwd() + "/Image_Classification/code/")
 
 pre_train_path = os.getcwd() + "/Image classification/Pretrain/Basic/"
 test_path = os.getcwd() + "/Image classification/Data/test"
