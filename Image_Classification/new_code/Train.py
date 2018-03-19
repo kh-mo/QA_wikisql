@@ -5,8 +5,7 @@ from scipy.misc import imread, imresize
 
 flags = tf.app.flags
 flags.DEFINE_string("train_path", "C:/Users/user/Desktop/Deep_Learning/Image_Classification/data/train", "Training text file. (required)")
-flags.DEFINE_string("test_path", "C:/Users/user/Desktop/Deep_Learning/Image_Classification/data/test", "Testing text file. (required)")
-flags.DEFINE_string("save_path", "C:/Users/user/Desktop/Deep_Learning/Image_Classification/alexnet", "Directory to write the model. (required)")
+flags.DEFINE_string("save_path", "C:/Users/user/Desktop/Deep_Learning/Image_Classification/model/alexnet", "Directory to write the model. (required)")
 flags.DEFINE_integer("train_epochs", 50, "Number of epochs to train. Each epoch processes the training data once.")
 flags.DEFINE_float("learning_rate", 0.001, "Initial learning rate.")
 flags.DEFINE_integer("batch_size", 2, "Number of training examples processed per step.")
@@ -16,7 +15,6 @@ FLAGS = flags.FLAGS
 class Options(object):
     def __init__(self):
         self.train_path = FLAGS.train_path
-        self.test_path = FLAGS.test_path
         self.save_path = FLAGS.save_path
         self.learning_rate = FLAGS.learning_rate
         self.train_epochs = FLAGS.train_epochs
@@ -40,7 +38,7 @@ class Block():
         with tf.variable_scope(name):
             filt = self.variable_initializer(init, filter, output_channel, trainable, name+"_filt")
             bias = self.variable_initializer(output_channel=output_channel, trainable=trainable, name=name+"_bias")
-            conv = tf.nn.conv2d(input, filt, [1,stride,stride,1], padding="SAME") + bias
+            conv = tf.add(tf.nn.conv2d(input, filt, [1,stride,stride,1], padding="SAME"), bias, name=name+"_result")
             return conv
 
     def Act(self, input, function, name):
@@ -68,7 +66,7 @@ class Block():
         weight = self.variable_initializer(init, [shape], output_channel, trainable, name + "_filt")
         bias = self.variable_initializer(output_channel=output_channel, trainable=trainable, name=name + "_bias")
         flat = tf.reshape(input, [-1, shape])
-        fc = tf.matmul(flat, weight) + bias
+        fc = tf.add(tf.matmul(flat, weight), bias, name=name+"_result")
         return fc
 
 class data_batch():
@@ -88,19 +86,10 @@ class data_batch():
         label = np.stack(label, axis=0)
         return (image, label)
 
-    def Test_generator(self, path):
-        image = list()
-        for folder in os.listdir(path):
-            subfile = path + "/" + folder
-            image.append(imresize(imread(subfile), [224, 224, 3]).astype(np.float) / 255.)
-        image = np.stack(image, axis=0)
-        return image
-
 class AlexNet(Block, data_batch):
     def __init__(self, options, session):
         self._options = options
         self.train_x, self.train_y = self.Train_generator(self._options.train_path)
-        self.test_x = self.Test_generator(self._options.test_path)
         self.x = tf.placeholder(tf.float32, shape=[None, 224, 224, 3], name="input")
         self.y = tf.placeholder(tf.float32, shape=[None, self._options.number_of_label], name="output")
         self.bol = tf.placeholder(tf.bool, name="bol")
@@ -242,7 +231,7 @@ class DenseNet(Block):
 # a = DenseNet(number_of_label=2, growth_rate=32)
 # tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
 
-def main(_):
+def main():
     opts = Options()
     with tf.Session() as sess:
         # sess = tf.InteractiveSession()
@@ -251,8 +240,5 @@ def main(_):
         model.save(sess)
 
 if __name__ == "__main__":
-    tf.app.run()
-
-
-
+    main()
 
