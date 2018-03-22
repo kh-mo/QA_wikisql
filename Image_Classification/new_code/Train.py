@@ -6,8 +6,9 @@ from scipy.misc import imread, imresize
 flags = tf.app.flags
 flags.DEFINE_string("train_path", "C:/Users/user/Desktop/Deep_Learning/Image_Classification/data/train", "Training text file. (required)")
 flags.DEFINE_string("save_path", "C:/Users/user/Desktop/Deep_Learning/Image_Classification/model/alexnet", "Directory to write the model. (required)")
-flags.DEFINE_integer("train_epochs", 50, "Number of epochs to train. Each epoch processes the training data once.")
+flags.DEFINE_integer("train_epochs", 500, "Number of epochs to train. Each epoch processes the training data once.")
 flags.DEFINE_float("learning_rate", 0.001, "Initial learning rate.")
+flags.DEFINE_float("dropout", 0.5, "dropout_probability.")
 flags.DEFINE_integer("batch_size", 2, "Number of training examples processed per step.")
 flags.DEFINE_integer("number_of_label", 2, "Number of label.")
 FLAGS = flags.FLAGS
@@ -18,6 +19,7 @@ class Options(object):
         self.save_path = FLAGS.save_path
         self.learning_rate = FLAGS.learning_rate
         self.train_epochs = FLAGS.train_epochs
+        self.dropout = FLAGS.dropout
         self.batch_size = FLAGS.batch_size
         self.number_of_label = FLAGS.number_of_label
 
@@ -93,6 +95,7 @@ class AlexNet(Block, data_batch):
         self.x = tf.placeholder(tf.float32, shape=[None, 224, 224, 3], name="input")
         self.y = tf.placeholder(tf.float32, shape=[None, self._options.number_of_label], name="output")
         self.bol = tf.placeholder(tf.bool, name="bol")
+        self.drop_prob = tf.placeholder(tf.float32, name="drop_prob")
 
         self.conv1 = self.Conv(input=self.x, filter=[11,11,3], output_channel=48, stride=4, init="xavier", trainable=True, name="conv1")
         self.pool1 = self.Pool(input=self.conv1, filter=2, stride=1, function="max", name="pool1")
@@ -106,8 +109,8 @@ class AlexNet(Block, data_batch):
         self.pool3 = self.Pool(input=self.conv5, filter=2, stride=1, function="max", name="pool3")
 
         self.fc1 = self.FC(input=self.pool3, output_channel=1024, init="xavier", trainable=True, name="fc1")
-        self.fc2 = self.FC(input=self.fc1, output_channel=1024, init="xavier", trainable=True,name="fc2")
-        self.fc3 = self.FC(input=self.fc2, output_channel=self._options.number_of_label, init="xavier", trainable=True,name="fc3")
+        self.fc2 = self.FC(input=tf.nn.dropout(self.fc1, self.drop_prob), output_channel=1024, init="xavier", trainable=True,name="fc2")
+        self.fc3 = self.FC(input=tf.nn.dropout(self.fc2, self.drop_prob), output_channel=self._options.number_of_label, init="xavier", trainable=True,name="fc3")
         self.probability = tf.nn.softmax(self.fc3)
 
         ## cost, accuracy, train 지정
@@ -128,7 +131,7 @@ class AlexNet(Block, data_batch):
         batch_idx = np.random.choice(x.shape[0], batch_size, False)
         xs, ys = x[batch_idx], y[batch_idx]
         bool = trainable
-        return {self.x: xs, self.y: ys, self.bol: bool}
+        return {self.x: xs, self.y: ys, self.bol: bool, self.drop_prob:self._options.dropout}
 
     def train(self, sess):
         sess.run(tf.global_variables_initializer())
