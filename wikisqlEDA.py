@@ -2,9 +2,9 @@ import os
 import json
 
 if __name__ == "__main__":
-    train_path = os.path.join(os.getcwd(), 'WikiSQL/data/train.jsonl')
-    dev_path = os.path.join(os.getcwd(), 'WikiSQL/data/dev.jsonl')
-    test_path = os.path.join(os.getcwd(), 'WikiSQL/data/test.jsonl')
+    train_path = os.path.join(os.path.dirname(os.getcwd()), 'WikiSQL/data/train.jsonl')
+    dev_path = os.path.join(os.path.dirname(os.getcwd()), 'WikiSQL/data/dev.jsonl')
+    test_path = os.path.join(os.path.dirname(os.getcwd()), 'WikiSQL/data/test.jsonl')
 
     with open(train_path) as tr, open(dev_path) as de, open(test_path) as ts:
         train_data = tr.readlines()
