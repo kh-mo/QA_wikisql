@@ -11,35 +11,63 @@ if __name__ == "__main__":
         dev_data = de.readlines()
         test_data = ts.readlines()
 
-    print(len(train_data))
-    print(len(dev_data))
-    print(len(test_data))
+    print("train lines : {}, dev lines : {}, test lines : {}".format(len(train_data), len(dev_data), len(test_data)))
+    print("dataset total : {}".format(len(train_data+dev_data+test_data)))
+    # json.loads(train_data[0])
 
+    train_table_path = os.path.join(os.path.dirname(os.getcwd()), 'WikiSQL/data/train.tables.jsonl')
+    dev_table_path = os.path.join(os.path.dirname(os.getcwd()), 'WikiSQL/data/dev.tables.jsonl')
+    test_table_path = os.path.join(os.path.dirname(os.getcwd()), 'WikiSQL/data/test.tables.jsonl')
+
+    with open(train_table_path) as tr, open(dev_table_path) as de, open(test_table_path) as ts:
+        train_table_data = tr.readlines()
+        dev_table_data = de.readlines()
+        test_table_data = ts.readlines()
+
+    # 어떤 정보가 table정보를 담고 있는 것인지??
     tr_table = []
     dev_table = []
     ts_table = []
+    criterion = "id"
 
-    for doc in train_data:
-        tr_table.append(json.loads(doc)['table_id'])
-    for doc in dev_data:
-        dev_table.append(json.loads(doc)['table_id'])
-    for doc in test_data:
-        ts_table.append(json.loads(doc)['table_id'])
+    for doc in train_table_data:
+        tr_table.append(json.loads(doc)[criterion].rsplit("-",maxsplit=1)[0])
+    for doc in dev_table_data:
+        dev_table.append(json.loads(doc)[criterion].rsplit("-",maxsplit=1)[0])
+    for doc in test_table_data:
+        ts_table.append(json.loads(doc)[criterion].rsplit("-",maxsplit=1)[0])
 
-    tr_table = list(set(tr_table))
-    dev_table = list(set(dev_table))
-    ts_table = list(set(ts_table))
+    tr_table = set(tr_table)
+    dev_table = set(dev_table)
+    ts_table = set(ts_table)
 
-    print(len(tr_table))
-    print(len(dev_table))
-    print(len(ts_table))
+    print("train table lines : {}, dev table lines : {}, test table lines : {}".format(len(tr_table), len(dev_table), len(ts_table)))
+    print("tables total : {}".format(len(tr_table|dev_table|ts_table)))
+    len(set(tr_table) & set(dev_table))
+    len(set(tr_table) & set(ts_table))
+    len(set(dev_table) & set(ts_table))
 
-    print(len(train_data) + len(dev_data) + len(test_data))
-    print(len(tr_table) + len(dev_table) + len(ts_table))
+    len(tr_table | dev_table | ts_table - (tr_table&dev_table) - (dev_table&ts_table) - (ts_table&tr_table)|(dev_table&ts_table&tr_table))
 
-    list(set(tr_table) & set(dev_table))
-    list(set(tr_table) & set(ts_table))
-    list(set(dev_table) & set(ts_table))
+    len(tr_table & dev_table)
+    len(dev_table & ts_table)
+    len(ts_table&tr_table)
+    len(tr_table & dev_table & ts_table)
+
+    question_lengths = []
+    query_lengths = []
+    number_of_columns = []
+
+    for line in (train_data+dev_data+test_data):
+        question_lengths.append(len(json.loads(line)['question'].split(' ')))
+
+    for line in (tr_table+dev_table+ts_table):
+        question_lengths.append(len(json.loads(line)['question']))
+
+    len(train_table_data+dev_table_data+test_table_data)
+    import matplotlib.pyplot as plt
+    plt.hist(question_lengths, bins=list(range(60)), range=(0,60))
+
     '''
     전체 학습 데이터 수 : 56,355
     전체 검증 데이터 수 : 8,421
@@ -53,3 +81,5 @@ if __name__ == "__main__":
     겹치는 테이블은 없다... 근데 어떻게 안 본 테이블에서 정보를 얻지?
     테이블 정보와 질문이 같이 들어간다는 가정
     '''
+
+    json.loads(train_data[0])["table_id"].rsplit("-",maxsplit=1)[0]
