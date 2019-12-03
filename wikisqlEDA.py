@@ -69,3 +69,6 @@ if __name__ == "__main__":
     ax2.hist(number_of_columns, bins=list(range(40)), range=(0, 40))
     ax2.set_xlabel("Number of columns")
     ax2.set_ylabel("Frequency")
+
+    plt.tight_layout()
+    plt.show()
