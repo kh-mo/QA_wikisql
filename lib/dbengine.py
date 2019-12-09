@@ -1,4 +1,10 @@
+import re
 import records
+from lib.query import Query
+from babel.numbers import parse_decimal, NumberFormatError
+
+schema_re = re.compile(r'\((.+)\)')
+num_re = re.compile(r'[-+]?\d*\.\d+|\d+')
 
 class DBEngine:
     def __init__(self, db_file):
@@ -12,10 +18,34 @@ class DBEngine:
         if not table_id.startswith("table"):
             table_id = "table_{}".format(table_id.replace('-','_'))
         table_info = self.conn.query("SELECT sql from sqlite_master WHERE tbl_name = :name", name=table_id)
-
-
-ex_gold = engine.execute_query(gold_example['table_id'], lf_gold_query, lower=True)
-table_id = gold_example['table_id']
-table_info = engine.conn.query("SELECT sql from sqlite_master WHERE tbl_name = :name", name=table_id).all()[0].sql
-select_index = lf_gold_query.sel_index
+        schema_str = schema_re.findall(table_info[0]['sql'])[0]
+        schema = {}
+        for tup in schema_str.split(', '):
+            col, col_type = tup.split()
+            schema[col] = col_type
+        select = 'col{}'.format(select_index)
+        agg = Query.agg_ops[aggregation_index]
+        if agg:
+            select = '{}({})'.format(agg, select)
+        where_clause = []
+        where_map = {}
+        for col_index, op, val in conditions:
+            if lower and isinstance(val, str):
+                val = val.lower()
+            if schema['col{}'.format(col_index)] == 'real' and not isinstance(val, (int, float)):
+                try:
+                    val = float(parse_decimal(val, locale='en_US'))
+                except NumberFormatError as e:
+                    val = float(num_re.findall(val)[0])
+            where_clause.append('col{} {} :col{}'.format(col_index, Query.cond_ops[op], col_index))
+            where_map['col{}'.format(col_index)] = val
+        where_str = ''
+        if where_clause:
+            where_str = 'WHERE ' + ' AND '.join(where_clause)
+        # 최종 쿼리문 얻기
+        query = 'SELECT {} AS result FROM {} {}'.format(select, table_id, where_str)
+        # DB에 질의
+        out = self.conn.query(query, **where_map)
+        # 결과를 리턴
+        return [o.result for o in out]
 

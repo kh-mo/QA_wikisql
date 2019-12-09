@@ -5,24 +5,12 @@ from lib.query import Query
 from lib.dbengine import DBEngine
 from lib.common import count_lines
 
-# import os
-# a = os.path.join(os.path.dirname(os.getcwd()), 'WikiSQL/data/dev.jsonl')
-# b = os.path.join(os.path.dirname(os.getcwd()), 'WikiSQL/test/example.pred.dev.jsonl')
-# c = os.path.join(os.path.dirname(os.getcwd()), 'WikiSQL/data/dev.db')
-# engine = DBEngine(c)
-# with open(a) as sf, open(b) as pf:
-#     for source_line, pred_line in tqdm(zip(sf, pf), total=count_lines(a)):
-#         # line별 정답과 예측 샘플 가져오기
-#         gold_example = json.loads(source_line)
-#         pred_example = json.loads(pred_line)
-#         lf_gold_query = Query.from_dict(gold_example['sql'], ordered=True)
-
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--source_file")
     parser.add_argument("--db_file")
     parser.add_argument("--pred_file")
-    parser.add_argument("--ordered")
+    parser.add_argument("--ordered", action='store_true')
     args = parser.parse_args()
 
     engine = DBEngine(args.db_file)
@@ -50,6 +38,6 @@ if __name__=="__main__":
 
             # lf, ex의 gold, pred 매칭결과 구하기
             ex_acc_list.append(ex_pred == ex_gold)
-            lf_acc_list.append(lf_pred_query == lf_gold_query)
-            print('ex_accuracy {}\n lf_accuracy {}'.format(
-                sum(ex_acc_list)/len(ex_acc_list), sum(lf_acc_list)/len(lf_acc_list),))
+            lf_acc_list.append(lf_pred_query == lf_gold_query) # query의 __eq__를 호출
+        print('ex_accuracy {}\n lf_accuracy {}'.format(
+            sum(ex_acc_list)/len(ex_acc_list), sum(lf_acc_list)/len(lf_acc_list),))
