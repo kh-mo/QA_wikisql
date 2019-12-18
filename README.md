@@ -29,6 +29,22 @@ baseline | 0.0 | 0.0 | 0.0 | 0.0 |
 - Logical Form Accuary : 쿼리문이 정답과 일치하는 여부
 
 ## Getting Start
+
+### requirement
+- python 3
+- [WikiSQL](https://github.com/salesforce/WikiSQL)
+- [corenlp for python](https://github.com/stanfordnlp/python-stanford-corenlp)
+
+### Download Dataset
+```
+from https://github.com/salesforce/WikiSQL
+
+git clone https://github.com/salesforce/WikiSQL
+cd WikiSQL
+pip install -r requirements.txt
+tar xvjf data.tar.bz2
+```
+
 ### Do EDA
 ```shell
 python wikisqlEDA.py
