@@ -50,6 +50,11 @@ tar xvjf data.tar.bz2
 python wikisqlEDA.py
 ```
 
+### Tokenizing
+```shell
+python stanford_parsing.py
+```
+
 ### Get Result
 ```shell
 python evaluate.py --source_file=data/dev.jsonl --db_file=data/dev.db --pred_file=data/example.pred.dev.jsonl
