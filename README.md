@@ -53,6 +53,7 @@ python wikisqlEDA.py
 ### Tokenizing
 ```shell
 python stanford_parsing.py
+python bpe.py
 ```
 
 ### Get Result
