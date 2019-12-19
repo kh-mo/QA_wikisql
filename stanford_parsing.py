@@ -37,4 +37,21 @@ if __name__ == "__main__":
                     w.write("\n")
         except IndexError as e:
             pass
+    print("word tokenizing done.")
 
+    with open(os.path.join(os.path.dirname(os.getcwd()), "QA_wikisql/" + type + "_lemma.txt"), "w", encoding="utf-8") as w:
+        try:
+            for line in qs:
+                ann = client.annotate(json.loads(line)["question"])
+                # corenlp로 파싱된 question 단어들을 space로 분할하여 한 문장으로 저장
+                w.write(" ".join([t.lemma for t in ann.sentence[0].token]))
+                w.write("\n")
+            for line in ts:
+                for word in json.loads(line)["header"]:
+                    ann = client.annotate(word)
+                    # corenlp로 파싱된 header 단어들을 space로 분할하여 한 문장으로 저장
+                    w.write(" ".join([t.lemma for t in ann.sentence[0].token]))
+                    w.write("\n")
+        except IndexError as e:
+            pass
+    print("lemma tokenizing done.")
