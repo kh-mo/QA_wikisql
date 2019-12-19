@@ -22,7 +22,13 @@ if __name__ == "__main__":
     # corenlp parser
     client = corenlp.CoreNLPClient(annotators="tokenize ssplit pos lemma ner depparse".split())
 
-    with open(os.path.join(os.path.dirname(os.getcwd()), "QA_wikisql/" + type + ".txt"), "w", encoding="utf-8") as w:
+    # make preprocess folder
+    preprocessed_dir = os.path.join(os.getcwd(), "preprocess")
+    if not os.path.isdir(preprocessed_dir):#폴더 없으면 생성 있으면 패스
+        os.mkdir(preprocessed_dir)
+
+    # tokenizing
+    with open(os.path.join(preprocessed_dir, type + ".txt"), "w", encoding="utf-8") as w:
         try:
             for line in qs:
                 ann = client.annotate(json.loads(line)["question"])
@@ -39,7 +45,7 @@ if __name__ == "__main__":
             pass
     print("word tokenizing done.")
 
-    with open(os.path.join(os.path.dirname(os.getcwd()), "QA_wikisql/" + type + "_lemma.txt"), "w", encoding="utf-8") as w:
+    with open(os.path.join(preprocessed_dir, type + "_lemma.txt"), "w", encoding="utf-8") as w:
         try:
             for line in qs:
                 ann = client.annotate(json.loads(line)["question"])
