@@ -7,8 +7,10 @@
 ## 데이터 셋
 - WikiSQL 데이터 셋 활용([링크](https://github.com/salesforce/WikiSQL))
 - 80,654개 자연어 질문, 24,241개 테이블
-- Train, Dev, Test table 사이에 중복된 테이블은 없다
-- 페이퍼보다 table이 좀 더 많다?? 그 이유는?? (2290개 더 많다)
+- Train, Dev 중복 table : 185개
+- Dev, Test 중복 table : 57개
+- Test, Train 중복 table : 426개
+- Train, Dev, Test 동시에 중복되는 table은 없다
 
 *데이터 셋* | *Questions* | *SQL tables* |
 :---: | :---: | :---: |
@@ -36,6 +38,7 @@ baseline | 0.0 | 0.0 | 0.0 | 0.0 |
 - [corenlp for python](https://github.com/stanfordnlp/python-stanford-corenlp)
 
 ### Download Dataset
+salesforce의 WikiSQL 깃 레포지토리로부터 데이터셋과 평가를 위한 코드를 다운로드 받는다.
 ```
 from https://github.com/salesforce/WikiSQL
 
@@ -46,11 +49,14 @@ tar xvjf data.tar.bz2
 ```
 
 ### Do EDA
+데이터 수, 테이블 수, [\[1\]](#Reference)에 작성된 figure 5의 question lengths, number of columns 그림 확인.
 ```shell
 python wikisqlEDA.py
 ```
 
 ### Tokenizing
+Dataset의 question과 table column name을 유형별(train, dev, test)로 모아 stanford parser로 tokenizing 진행.
+이후 [\[2\]](#Reference), [\[3\]](#Reference) 알고리즘을 적용하여 강건한 input 제작.
 ```shell
 python stanford_parsing.py
 python bpe.py
