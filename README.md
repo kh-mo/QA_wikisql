@@ -32,14 +32,21 @@ baseline | 0.0 | 0.0 | 0.0 | 0.0 |
 
 ## Getting Start
 
-### requirement
+### Requirement
 - python 3
 - [WikiSQL](https://github.com/salesforce/WikiSQL)
 - [corenlp for python](https://github.com/stanfordnlp/python-stanford-corenlp)
 
+### Folder Structure
+```shell
+nli
+ |--- QA_wikisql
+ |--- WikiSQL
+```
+
 ### Download Dataset
 salesforce의 WikiSQL 깃 레포지토리로부터 데이터셋과 평가를 위한 코드를 다운로드 받는다.
-```
+```shell
 from https://github.com/salesforce/WikiSQL
 
 git clone https://github.com/salesforce/WikiSQL
