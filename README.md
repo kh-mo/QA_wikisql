@@ -38,7 +38,7 @@ baseline | 0.0 | 0.0 | 0.0 | 0.0 |
 - [corenlp for python](https://github.com/stanfordnlp/python-stanford-corenlp)
 
 ### Folder Structure
-```shell
+```
 nli
  |--- QA_wikisql
  |--- WikiSQL
