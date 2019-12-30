@@ -8,6 +8,7 @@ dev를 이용해 OOV, unknown이 적은 규칙을 산출해야 함
 import os
 import re
 import copy
+import random
 import argparse
 from collections import Counter, defaultdict
 
@@ -151,49 +152,226 @@ def learn_bpe(infile, outfile, min_frequency, num_symbols, total_symbols, verbos
     outfile.close()
 
 class BPE(object):
-    def __init__(self, rulefile, merges=-1, separator="@@"):
+    def __init__(self, rulefile, merges=-1, separator="@@", glossaries=None):
 
         # rule 파일로부터 merge 갯수만큼 모든 규칙을 얻는다. merge가 -1이면 모든 규칙을 사용한다.
         self.bpe_rules = [tuple(item.strip('\r\n ').split(' ')) for (n, item) in enumerate(rulefile) if (merges==-1 or n<merges)]
 
+        # { ('a','b'): 9999 ~ ('c','d'): 0 }
         self.bpe_rules = dict([(code, i) for (i, code) in reversed(list(enumerate(self.bpe_rules)))])
+
+        # {'ab', ('a', 'b'))
         self.bpe_rules_reverse = dict([(pair[0] + pair[1], pair) for pair, i in self.bpe_rules.items()])
         self.separator = separator
+        self.glossaries = glossaries if glossaries else [] # bpe에 영향 안받는 단어들
         self.cache = {}
+        self.vocab = None
 
     def process_line(self, line, dropout=0):
+        '''
+        out = "왼쪽 공백" + self.segment + "오른쪽 공백"
+        오른쪽 공백의 if문이 2가지 조건을 가지는 이유는
+        1. self.segment로 나눌 line이 있는 경우는 공백만 계산하면 되고
+        2. line이 공백인 경우 왼쪽공백을 구하는 쪽에서 모든 공백을 이미 계산함
+        때문이다.
+        '''
         out = ""
-        leading_whitespace = len(line)-len(line.lstrip("\r\n "))
+
+        leading_whitespace = len(line) - len(line.lstrip("\r\n "))
         if leading_whitespace:
             out += line[:leading_whitespace]
+
         out += self.segment(line, dropout)
 
-        trailing_whitespace = len(line)-len(line.rstrip('\r\n '))
+        trailing_whitespace = len(line) - len(line.rstrip('\r\n '))
         if trailing_whitespace and trailing_whitespace != len(line):
             out += line[-trailing_whitespace:]
 
         return out
 
     def segment(self, sentence, dropout=0):
-        segments = self.segment_token(sentence.strip('\r\n ').split(' '), dropout)
+        '''
+        sentence의 앞뒤 공백을 제거한 후 space로 분할한 token을 segment_token 함수에 전달
+        dropout 적용 여부도 여기서 함께 제시
+        '''
+        segments = self.segment_tokens(sentence.strip('\r\n ').split(' '), dropout)
         return ' '.join(segments)
 
     def segment_tokens(self, tokens, dropout=0):
         output = []
         for word in tokens:
+            # 띄어쓰기가 2개일 경우 공백이 tokens에 남는데 이것을 제거
+            # eliminate double spaces
             if not word:
                 continue
+            # 1. self._isolate_glossaries() 먼저 수행
+            # 2. 1에서 얻어진 segment를 받아 encode 수행
+            # 3. 2에서 얻어진 encode 결과물 out을 list comprehension으로 저장
             new_word = [out for segment in self._isolate_glossaries(word) for out in encode(segment,
                                                                                             self.bpe_rules,
                                                                                             self.bpe_rules_reverse,
+                                                                                            self.vocab,
                                                                                             self.separator,
-                                                                                            self.version,
                                                                                             self.cache,
                                                                                             dropout)]
             for item in new_word[:-1]:
                 output.append(item + self.separator)
             output.append(new_word[-1])
         return output
+
+    def _isolate_glossaries(self, word):
+        # 단어 중 glossaries안에 들어있는 subword는 분해되지 않고 유지된다
+        word_segments = [word]
+        for gloss in self.glossaries:
+            # 1. word_segments에서 segment 추출
+            # 2. segment와 gloss를 isolate_glossary에서 subword 매칭 여부 탐색
+            # 3. 2에서 얻어진 out_segments 결과물을 list comprehension으로 저장
+            word_segments = [out_segments for segment in word_segments
+                                 for out_segments in isolate_glossary(segment, gloss)]
+        return word_segments
+
+def isolate_glossary(word, glossary):
+    """
+    Isolate a glossary present inside a word.
+    Returns a list of subwords. In which all 'glossary' glossaries are isolated
+    For example, if 'USA' is the glossary and '1934USABUSA' the word, the return value is:
+        ['1934', 'USA', 'B', 'USA']
+    """
+    # regex equivalent of (if word == glossary or glossary not in word)
+    if re.match('^'+glossary+'$', word) or not re.search(glossary, word):
+        return [word]
+    else:
+        segments = re.split(r'({})'.format(glossary), word)
+        segments, ending = segments[:-1], segments[-1]
+        segments = list(filter(None, segments)) # Remove empty strings in regex group.
+        return segments + [ending.strip('\r\n ')] if ending != '' else segments
+
+def encode(orig, bpe_codes, bpe_codes_reverse, vocab, separator, cache, glossaries_regex=None, dropout=0):
+    """Encode word based on list of BPE merge operations, which are applied consecutively
+    """
+
+    # dropout을 적용 안하고(and) 단어가 cache에 있는 경우
+    if not dropout and orig in cache:
+        return cache[orig]
+
+    # regex가 존재하고(and) 단어가 regex에 매칭될 때
+    if glossaries_regex and glossaries_regex.match(orig):
+        cache[orig] = (orig,)
+        return (orig,)
+
+    # 단어가 단일 character일 때
+    if len(orig) == 1:
+        return orig
+
+    # version에 따라 다른 결과
+    word = list(orig[:-1]) + [orig[-1] + '</w>']
+    # if version == (0, 1):
+    #     word = list(orig) + ['</w>']
+    # elif version == (0, 2): # more consistent handling of word-final segments
+    #     word = list(orig[:-1]) + [orig[-1] + '</w>']
+    # else:
+    #     raise NotImplementedError
+
+    # 위의 조건들을 다 pass 했을 경우
+    while len(word) > 1:
+        '''
+        break 조건
+        1. 단어가 다 합쳐져서 단일 단어가 되는 경우
+        2. 합칠 pairs가 없는 경우
+        '''
+        # word = "samples"; dropout=0
+        # pair = ('s', 'a')
+        # dropout을 고려하고(and) pair가 bpe_codes에 있는 (bpe_codes[pair], i, pair) list comprehension
+        # get list of symbol pairs; optionally apply dropout
+        pairs = [(bpe_codes[pair],i,pair) for (i,pair) in enumerate(zip(word, word[1:])) if (not dropout or random.random() > dropout) and pair in bpe_codes]
+
+        # pairs가 빈 리스트면 break
+        if not pairs:
+            break
+
+        # 우선순위가 제일 높은 pair, 첫 iter에선 대부분 character 조합이 나온다 => ('a', 'b')
+        #get first merge operation in list of BPE codes
+        bigram = min(pairs)[2]
+
+        # find start position of all pairs that we want to merge
+        positions = [i for (rank,i,pair) in pairs if pair == bigram]
+
+        i = 0
+        new_word = []
+        bigram = ''.join(bigram)
+        for j in positions:
+            # merges are invalid if they start before current position. This can happen if there are overlapping pairs: (x x x -> xx x)
+            if j < i:
+                continue
+            new_word.extend(word[i:j]) # all symbols before merged pair
+            new_word.append(bigram) # merged pair
+            i = j+2 # continue after merged pair
+        new_word.extend(word[i:]) # add all symbols until end of word
+        word = new_word
+
+    # don't print end-of-word symbols
+    if word[-1] == '</w>':
+        word = word[:-1]
+    elif word[-1].endswith('</w>'):
+        word[-1] = word[-1][:-4]
+
+    word = tuple(word)
+    if vocab:
+        word = check_vocab_and_split(word, bpe_codes_reverse, vocab, separator)
+
+    cache[orig] = word
+    return word
+
+def recursive_split(segment, bpe_codes, vocab, separator, final=False):
+    """Recursively split segment into smaller units (by reversing BPE merges)
+    until all units are either in-vocabulary, or cannot be split futher."""
+
+    try:
+        if final:
+            left, right = bpe_codes[segment + '</w>']
+            right = right[:-4]
+        else:
+            left, right = bpe_codes[segment]
+    except:
+        #sys.stderr.write('cannot split {0} further.\n'.format(segment))
+        yield segment
+        return
+
+    if left + separator in vocab:
+        yield left
+    else:
+        for item in recursive_split(left, bpe_codes, vocab, separator, False):
+            yield item
+
+    if (final and right in vocab) or (not final and right + separator in vocab):
+        yield right
+    else:
+        for item in recursive_split(right, bpe_codes, vocab, separator, final):
+            yield item
+
+def check_vocab_and_split(orig, bpe_codes, vocab, separator):
+    """Check for each segment in word if it is in-vocabulary,
+    and segment OOV segments into smaller units by reversing the BPE merge operations"""
+
+    out = []
+
+    for segment in orig[:-1]:
+        if segment + separator in vocab:
+            out.append(segment)
+        else:
+            #sys.stderr.write('OOV: {0}\n'.format(segment))
+            for item in recursive_split(segment, bpe_codes, vocab, separator, False):
+                out.append(item)
+
+    segment = orig[-1]
+    if segment in vocab:
+        out.append(segment)
+    else:
+        #sys.stderr.write('OOV: {0}\n'.format(segment))
+        for item in recursive_split(segment, bpe_codes, vocab, separator, True):
+            out.append(item)
+
+    return out
 
 def apply_bpe(instance, infile, outfile):
     for line in infile:
