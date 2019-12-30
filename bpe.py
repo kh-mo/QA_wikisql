@@ -12,13 +12,7 @@ import random
 import argparse
 from collections import Counter, defaultdict
 
-def get_vocabulary(file):
-    vocab = Counter()
-    for line in file:
-        for word in line.strip("\r\n ").split(' '):
-            if word:
-                vocab[word] += 1
-    return vocab
+
 
 def get_pair_statistics(file):
     stats = defaultdict(int)
@@ -105,51 +99,7 @@ def update_pair_statistics(pair, change, stats, indices):
                 indices[nex][j] += 1
             i += 1
 
-def learn_bpe(infile, outfile, min_frequency, num_symbols, total_symbols, verbose):
-    # 단어의 마지막 토큰을 "</w>"로 지정한 버전입니다.
-    outfile.write('#version: 0.2\n')
 
-    # {단어 : count} 형태의 딕셔너리 반환합니다.
-    vocab = get_vocabulary(infile)
-    # 단어를 음절별로 나누기, 단어의 마지막 음절에는 </w>를 붙입니다.
-    vocab = dict([(tuple(x[:-1])+(x[-1]+"</w>",) , y) for (x, y) in vocab.items()])
-    # 단어를 count 기준으로 내림차순 정렬합니다.
-    sorted_vocab = sorted(vocab.items(), key=lambda x:x[1], reverse=True)
-
-    # stats : {[token1, token2]:count}, indices {[token1,token2]:{1번단어:count, 2번단어:count}}
-    # stats는 특정 단어 페어가 등장한 총 수, indices는 해당 단어 페어가 등장한 위치
-    stats, indices = get_pair_statistics(sorted_vocab)
-
-    # 개별 유닛수를 구해 전체 단어 수에서 제외
-    if total_symbols:
-        uniq_char_internal = set()
-        uniq_char_final = set()
-        for word in vocab:
-            for char in word[:-1]:
-                uniq_char_internal.add(char)
-            uniq_char_final.add(word[-1])
-        num_symbols -= len(uniq_char_internal) + len(uniq_char_final)
-
-    for i in range(num_symbols):
-        # 가장 빈도가 높은 pair 획득
-        if stats:
-            most_frequent = max(stats, key=lambda x: stats[x])
-
-        # 모든 pair들이 최소 빈도수 이하일 경우 종료
-        if stats[most_frequent] < min_frequency:
-            print('no pair has frequency >= {0}. Stopping\n'.format(min_frequency))
-            break
-
-        # 진행상황 보여주기
-        if verbose:
-            print('pair {0}: {1} {2} -> {1}{2} (frequency {3})\n'.format(
-                i, most_frequent[0], most_frequent[1], stats[most_frequent]))
-
-        outfile.write('{0} {1}\n'.format(*most_frequent))
-        changes = replace_pair(most_frequent, sorted_vocab, indices)
-        update_pair_statistics(most_frequent, changes, stats, indices)
-
-    outfile.close()
 
 class BPE(object):
     def __init__(self, rulefile, merges=-1, separator="@@", glossaries=None):
@@ -392,6 +342,158 @@ if __name__ == "__main__":
     bpe = BPE(rulefile, -1, "@@")
     bpe.bpe_rules
     apply_bpe(bpe, infile, resultfile)
+
+import os
+import argparse
+
+def set_hyperparameters():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--train_infile", default=os.path.join(os.getcwd(), "preprocess/train.txt"))
+    parser.add_argument("--test_infile", default=os.path.join(os.getcwd(), "preprocess/test.txt"))
+    parser.add_argument("--dev_infile", default=os.path.join(os.getcwd(), "preprocess/dev.txt"))
+
+    parser.add_argument("--rule_file", default=os.path.join(os.getcwd(), "preprocess/rules.txt"))
+
+    parser.add_argument("--test_outfile", default=os.path.join(os.getcwd(), "preprocess/test_bpe.txt"))
+    args = parser.parse_args()
+    return args
+
+def learn_bpe(infile, outfile, min_frequency, num_symbols, total_symbols, verbose):
+    # 단어의 마지막 토큰을 "</w>"로 지정한 버전입니다.
+    outfile.write('#version: 0.2\n')
+
+    # {단어 : count} 형태의 딕셔너리 반환합니다.
+    vocab = get_vocabulary(infile)
+    # 단어를 음절별로 나누기, 단어의 마지막 음절에는 </w>를 붙입니다.
+    vocab = dict([(tuple(x[:-1])+(x[-1]+"</w>",) , y) for (x, y) in vocab.items()])
+    # 단어를 count 기준으로 내림차순 정렬합니다.
+    sorted_vocab = sorted(vocab.items(), key=lambda x:x[1], reverse=True)
+
+    # stats : {[token1, token2]:count}, indices {[token1,token2]:{1번단어:count, 2번단어:count}}
+    # stats는 특정 단어 페어가 등장한 총 수, indices는 해당 단어 페어가 등장한 위치
+    stats, indices = get_pair_statistics(sorted_vocab)
+
+    # 개별 유닛수를 구해 전체 단어 수에서 제외
+    if total_symbols:
+        uniq_char_internal = set()
+        uniq_char_final = set()
+        for word in vocab:
+            for char in word[:-1]:
+                uniq_char_internal.add(char)
+            uniq_char_final.add(word[-1])
+        num_symbols -= len(uniq_char_internal) + len(uniq_char_final)
+
+    for i in range(num_symbols):
+        # 가장 빈도가 높은 pair 획득
+        if stats:
+            most_frequent = max(stats, key=lambda x: stats[x])
+
+        # 모든 pair들이 최소 빈도수 이하일 경우 종료
+        if stats[most_frequent] < min_frequency:
+            print('no pair has frequency >= {0}. Stopping\n'.format(min_frequency))
+            break
+
+        # 진행상황 보여주기
+        if verbose:
+            print('pair {0}: {1} {2} -> {1}{2} (frequency {3})\n'.format(
+                i, most_frequent[0], most_frequent[1], stats[most_frequent]))
+
+        outfile.write('{0} {1}\n'.format(*most_frequent))
+        changes = replace_pair(most_frequent, sorted_vocab, indices)
+        update_pair_statistics(most_frequent, changes, stats, indices)
+
+    outfile.close()
+
+def learn_bpe(args):
+    infile = open(args.train_infile, "r", encoding="utf-8")
+
+    # {단어 : count} 형태의 딕셔너리 반환합니다.
+    vocab = get_vocabulary(infile)
+    # 단어를 음절별로 나누기, 단어의 마지막 음절에는 </w>를 붙입니다.
+    vocab = dict([(tuple(x[:-1])+(x[-1]+"</w>",) , y) for (x, y) in vocab.items()])
+    # 단어를 count 기준으로 내림차순 정렬합니다.
+    sorted_vocab = sorted(vocab.items(), key=lambda x:x[1], reverse=True)
+
+    # stats : {[token1, token2]:count}, indices {[token1,token2]:{1번단어:count, 2번단어:count}}
+    # stats는 특정 단어 페어가 등장한 총 수, indices는 해당 단어 페어가 등장한 위치
+    stats, indices = get_pair_statistics(sorted_vocab)
+
+    # 개별 유닛수를 구해 전체 단어 수에서 제외
+    if total_symbols:
+        uniq_char_internal = set()
+        uniq_char_final = set()
+        for word in vocab:
+            for char in word[:-1]:
+                uniq_char_internal.add(char)
+            uniq_char_final.add(word[-1])
+        num_symbols -= len(uniq_char_internal) + len(uniq_char_final)
+
+    for i in range(num_symbols):
+        # 가장 빈도가 높은 pair 획득
+        if stats:
+            most_frequent = max(stats, key=lambda x: stats[x])
+
+        # 모든 pair들이 최소 빈도수 이하일 경우 종료
+        if stats[most_frequent] < min_frequency:
+            print('no pair has frequency >= {0}. Stopping\n'.format(min_frequency))
+            break
+
+        # 진행상황 보여주기
+        if verbose:
+            print('pair {0}: {1} {2} -> {1}{2} (frequency {3})\n'.format(
+                i, most_frequent[0], most_frequent[1], stats[most_frequent]))
+
+        outfile.write('{0} {1}\n'.format(*most_frequent))
+        changes = replace_pair(most_frequent, sorted_vocab, indices)
+        update_pair_statistics(most_frequent, changes, stats, indices)
+
+    infile.cloas()
+    outfile.close()
+
+def get_vocabulary(file):
+    vocab = Counter()
+    for line in file:
+        for word in line.strip("\r\n ").split(' '):
+            if word:
+                vocab[word] += 1
+    return vocab
+
+if __name__ == "__main__":
+    args = set_hyperparameters()
+    learn_bpe(args)
+
+
+
+    # parser.add_argument(
+    #     '--merges', '-m', type=int, default=-1,
+    #     metavar='INT',
+    #     help="Use this many BPE operations (<= number of learned symbols)"+
+    #          "default: Apply all the learned merge operations")
+    # parser.add_argument(
+    #     '--separator', '-s', type=str, default='@@', metavar='STR',
+    #     help="Separator between non-final subword units (default: '%(default)s'))")
+    # parser.add_argument(
+    #     '--vocabulary', type=argparse.FileType('r'), default=None,
+    #     metavar="PATH",
+    #     help="Vocabulary file (built with get_vocab.py). If provided, this script reverts any merge operations that produce an OOV.")
+    # parser.add_argument(
+    #     '--vocabulary-threshold', type=int, default=None,
+    #     metavar="INT",
+    #     help="Vocabulary threshold. If vocabulary is provided, any word with frequency < threshold will be treated as OOV")
+    # parser.add_argument(
+    #     '--dropout', type=float, default=0,
+    #     metavar="P",
+    #     help="Dropout BPE merge operations with probability P (Provilkov et al., 2019). Use this on training data only.")
+    # parser.add_argument(
+    #     '--glossaries', type=str, nargs='+', default=None,
+    #     metavar="STR",
+    #     help="Glossaries. Words matching any of the words/regex provided in glossaries will not be affected "+
+    #          "by the BPE (i.e. they will neither be broken into subwords, nor concatenated with other subwords. "+
+    #          "Can be provided as a list of words/regex after the --glossaries argument. Enclose each regex in quotes.")
+
+
+
+
 
 
 
