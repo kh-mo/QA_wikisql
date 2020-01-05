@@ -67,6 +67,17 @@ Dataset의 question과 table column name을 유형별(train, dev, test)로 모�
 ```shell
 python stanford_parsing.py
 python bpe.py
+
+this is example -> this __is __example -> th@@ is __is __ex@@ ample
+```
+
+### Restore
+BPE와 stanford parser결과를 원래 문장으로 복원
+공백제거 -> @@를 빈 공간으로 치환 -> __를 띄어쓰기로 치환
+```shell
+python restore.py
+
+th@@ is __is __ex@@ ample -> th@@is__is__ex@@ample -> this__is__example
 ```
 
 ### Get Result
