@@ -21,6 +21,7 @@ def set_hyperparameters():
     parser.add_argument("--train_infile", default=os.path.join(os.getcwd(), "preprocess/train.txt"))
     parser.add_argument("--test_infile", default=os.path.join(os.getcwd(), "preprocess/test.txt"))
     parser.add_argument("--dev_infile", default=os.path.join(os.getcwd(), "preprocess/dev.txt"))
+    parser.add_argument("--voca", default=os.path.join(os.getcwd(), "preprocess/voca.txt"))
 
     # output file
     parser.add_argument("--rule_file", default=os.path.join(os.getcwd(), "preprocess/rules.txt"))
@@ -224,9 +225,10 @@ def segment_tokens(tokens, args):
     bpe_rules = [tuple(item.strip('\r\n ').split(' ')) for (n, item) in enumerate(rule) if (args.merges == -1 or n < args.merges)]
 
     # { ('a','b'): 9999 ~ ('c','d'): 0 }
+    # value가 낮을수록 규칙이 많이 등장했다.(learn bpe의 결과물 rule에서 상단에 있는 pair가 가장 많은 빈도로 trainset에서 발생한 조합임)
     args.bpe_rules = dict([(code, i) for (i, code) in reversed(list(enumerate(bpe_rules)))])
 
-    # {'ab', ('a', 'b'))
+    # {'ab', ('a', 'b')), key는 합쳐진 것, value는 분할된 것
     args.bpe_rules_reverse = dict([(pair[0] + pair[1], pair) for pair, i in args.bpe_rules.items()])
 
     # glossaries 추가 고려(option)
@@ -244,6 +246,7 @@ def segment_tokens(tokens, args):
         # self.vocab
         # self.cache
 
+        # token이 분할되어 new_word로 넘어오면 @@이 붙게되고, 분할되지 않으면 token이 그대로 output에 붙게된다.
         for item in new_word[:-1]:
             output.append(item + args.separator)
         output.append(new_word[-1])
@@ -338,6 +341,7 @@ def encode(token, args):
         word[-1] = word[-1][:-4]
 
     word = tuple(word)
+    # vocab = read_vocabulary(open(args.voca, 'r', encoding='utf-8'))
     # if vocab:
     #     word = check_vocab_and_split(word, args.bpe_rules_reverse, vocab, args.separator)
 
@@ -395,14 +399,26 @@ def check_vocab_and_split(orig, bpe_codes, vocab, separator):
 
     return out
 
+def read_vocabulary(vocab_file):
+    """read vocabulary file produced by get_vocab.py, and filter according to frequency threshold.
+    """
+
+    vocabulary = set()
+
+    for line in vocab_file:
+        word, freq = line.strip('\r\n ').split(' ')
+        freq = int(freq)
+        vocabulary.add(word)
+
+    return vocabulary
+
 if __name__ == "__main__":
     args = set_hyperparameters()
     print("set hyperparameter")
-    rules = learn_bpe(args)
+    # rules = learn_bpe(args)
     print("get rules")
-    save_rule_file(rules, args)
+    # save_rule_file(rules, args)
     print("save rules")
     apply_bpe(args)
     print("apply bpe")
     print("Done.")
-
