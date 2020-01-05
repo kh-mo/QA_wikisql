@@ -49,14 +49,14 @@ if __name__ == "__main__":
         # tokenizing
         with open(os.path.join(preprocessed_dir, type + "_token.txt"), "w", encoding="utf-8") as w:
             try:
-                for line in qs:
-                    ann = client.annotate(json.loads(line)["question"].replace(" ", "__"))
+                for idx, line in enumerate(qs):
+                    ann = client.annotate(json.loads(line)["question"].replace(u'\xa0', u' ').replace(" ", "__"))
                     # corenlp로 파싱된 question 단어들을 space로 분할하여 한 문장으로 저장
                     w.write(" ".join([t.word for t in ann.sentence[0].token]).replace("__ ", "__"))
                     w.write("\n")
                 for line in ts:
                     for word in json.loads(line)["header"]:
-                        ann = client.annotate(word.replace(" ", "__"))
+                        ann = client.annotate(word.replace(u'\xa0', u' ').replace(" ", "__"))
                         # corenlp로 파싱된 header 단어들을 space로 분할하여 한 문장으로 저장
                         w.write(" ".join([t.word for t in ann.sentence[0].token]).replace("__ ", "__"))
                         w.write("\n")
