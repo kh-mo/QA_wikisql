@@ -14,7 +14,7 @@ import corenlp
 
 if __name__ == "__main__":
     # read type question, header file
-    types = ["train","dev","test"]
+    types = ["train", "dev", "test"]
 
     for type in types:
         path = os.path.join(os.path.dirname(os.getcwd()), "WikiSQL/data/" + type + ".jsonl")
@@ -31,37 +31,52 @@ if __name__ == "__main__":
         if not os.path.isdir(preprocessed_dir): # 폴더 없으면 생성 있으면 패스
             os.mkdir(preprocessed_dir)
 
-        # tokenizing
+        # original data
         with open(os.path.join(preprocessed_dir, type + ".txt"), "w", encoding="utf-8") as w:
             try:
                 for line in qs:
-                    ann = client.annotate(json.loads(line)["question"])
-                    # corenlp로 파싱된 question 단어들을 space로 분할하여 한 문장으로 저장
-                    w.write(" ".join([t.word for t in ann.sentence[0].token]))
+                    q = json.loads(line)["question"]
+                    w.write(q)
                     w.write("\n")
                 for line in ts:
                     for word in json.loads(line)["header"]:
-                        ann = client.annotate(word)
-                        # corenlp로 파싱된 header 단어들을 space로 분할하여 한 문장으로 저장
-                        w.write(" ".join([t.word for t in ann.sentence[0].token]))
+                        w.write(word)
                         w.write("\n")
             except IndexError as e:
                 pass
-        print("word tokenizing done.")
+        print("get {} original done.".format(type))
+
+        # tokenizing
+        with open(os.path.join(preprocessed_dir, type + "_token.txt"), "w", encoding="utf-8") as w:
+            try:
+                for line in qs:
+                    ann = client.annotate(json.loads(line)["question"].replace(" ", "__"))
+                    # corenlp로 파싱된 question 단어들을 space로 분할하여 한 문장으로 저장
+                    w.write(" ".join([t.word for t in ann.sentence[0].token]).replace("__ ", "__"))
+                    w.write("\n")
+                for line in ts:
+                    for word in json.loads(line)["header"]:
+                        ann = client.annotate(word.replace(" ", "__"))
+                        # corenlp로 파싱된 header 단어들을 space로 분할하여 한 문장으로 저장
+                        w.write(" ".join([t.word for t in ann.sentence[0].token]).replace("__ ", "__"))
+                        w.write("\n")
+            except IndexError as e:
+                pass
+        print("word {} tokenizing done.".format(type))
 
         with open(os.path.join(preprocessed_dir, type + "_lemma.txt"), "w", encoding="utf-8") as w:
             try:
                 for line in qs:
-                    ann = client.annotate(json.loads(line)["question"])
+                    ann = client.annotate(json.loads(line)["question"].replace(" ", "__"))
                     # corenlp로 파싱된 question 단어들을 space로 분할하여 lemmatization 문장으로 저장
-                    w.write(" ".join([t.lemma for t in ann.sentence[0].token]))
+                    w.write(" ".join([t.lemma for t in ann.sentence[0].token]).replace("__ ", "__"))
                     w.write("\n")
                 for line in ts:
                     for word in json.loads(line)["header"]:
-                        ann = client.annotate(word)
+                        ann = client.annotate(word.replace(" ", "__"))
                         # corenlp로 파싱된 header 단어들을 space로 분할하여 lemmatization 문장으로 저장
-                        w.write(" ".join([t.lemma for t in ann.sentence[0].token]))
+                        w.write(" ".join([t.lemma for t in ann.sentence[0].token]).replace("__ ", "__"))
                         w.write("\n")
             except IndexError as e:
                 pass
-        print("lemma tokenizing done.")
+        print("word {} lemmatization done.".format(type))
