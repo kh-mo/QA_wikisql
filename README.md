@@ -71,7 +71,7 @@ python bpe.py
 this is example -> this __is __example -> th@@ is __is __ex@@ ample
 ```
 
-### Restore
+### Restoring
 BPE와 stanford parser결과를 원래 문장으로 복원
 공백제거 -> @@를 빈 공간으로 치환 -> __를 띄어쓰기로 치환
 ```shell
