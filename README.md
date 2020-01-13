@@ -26,6 +26,16 @@ Total | 80,654개 | 24,241개 |
 model1 | 0.0 | 0.0 | 0.0 | 0.0 |
 baseline | 0.0 | 0.0 | 0.0 | 0.0 |
 
+### Tokenizing 성능평가
+voca size와 sequence length 사이에는 trade-off 관계가 존재한다.
+Voca가 많아질수록 sequence length는 줄어들게 된다.
+다만 voca가 많아지면 UNK도 증가하게 된다.
+
+*Tokenizing 유형* | *Train Voca* | *Train Length* | *Dev UNK* | *Test UNK* |
+:---: | :---: | :---: | :---: | :---: |
+stanford + BPE_0(None) | 55,462 | 5.39 | 5,204 | 10,016 |
+
+
 ### 평가지표
 - Execution Accuracy : 쿼리 실행 결과가 정확한 결과를 반환하는지 여부
 - Logical Form Accuary : 쿼리문이 정답과 일치하는 여부
