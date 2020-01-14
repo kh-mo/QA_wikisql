@@ -23,7 +23,7 @@ Total | 80,654개 | 24,241개 |
 
 
 ## 평가
-### Tokenizing 성능평가
+### 1. Tokenizing 성능평가
 voca size와 sequence length 사이에는 trade-off 관계가 존재한다.
 Voca가 많아질수록 sequence length는 줄어들게 되나 UNK 증가하게 된다.
 
@@ -31,7 +31,7 @@ Voca가 많아질수록 sequence length는 줄어들게 되나 UNK 증가하게 
 :---: | :---: | :---: | :---: | :---: |
 stanford + BPE_0(None) | 55,462 | 5.39 | 5,204 | 10,016 |
 
-### 리더보드
+### 2. NL2SQL 리더보드
 - Execution Accuracy(EA) : 쿼리 실행 결과가 정확한 결과를 반환하는지 여부
 - Logical Form Accuary(LFA) : 쿼리문이 정답과 일치하는 여부
 
@@ -101,6 +101,6 @@ python evaluate.py --source_file=data/dev.jsonl --db_file=data/dev.db --pred_fil
 ```
 
 ## Reference
-- [1] [SEQ2SQL: GENERATING STRUCTURED QUERIES FROM NATURAL LANGUAGE USING REINFORCEMENT LEARNING](https://arxiv.org/pdf/1709.00103.pdf), arXiv 2017
+- [1] [SEQ2SQL: Generating Structured Queries From Natural Language Using Reinforcement Learning](https://arxiv.org/pdf/1709.00103.pdf), arXiv 2017
 - [2] [Neural Machine Translation of Rare Words with Subword Units](https://arxiv.org/pdf/1508.07909.pdf), ACL 2016 
 - [3] [BPE-Dropout: Simple and Effective Subword Regularization](https://arxiv.org/pdf/1910.13267.pdf), arXiv 2019
