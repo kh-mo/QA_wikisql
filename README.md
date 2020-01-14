@@ -41,7 +41,7 @@ model1 | 0.0 | 0.0 | 0.0 | 0.0 |
 baseline | 0.0 | 0.0 | 0.0 | 0.0 |
 
 
-## Getting Star
+## Getting Start 
 ### Requirement
 - python 3
 - [WikiSQL](https://github.com/salesforce/WikiSQL)
