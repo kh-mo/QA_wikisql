@@ -29,7 +29,7 @@ Voca가 많아질수록 sequence length는 줄어들게 되나 UNK 증가하게 
 
 *Tokenizing 유형* | *Train Voca* | *Train Length* | *Dev UNK* | *Test UNK* |
 :---: | :---: | :---: | :---: | :---: |
-stanford + BPE_0(None) | 55,462 | 5.39 | 5,204 | 10,016 |
+stanford + BPE_0(None) | 55,992 | 5.38 | 5,259 | 10,113 |
 
 ### 2. NL2SQL 리더보드
 - Execution Accuracy(EA) : 쿼리 실행 결과가 정확한 결과를 반환하는지 여부
@@ -82,6 +82,7 @@ this is example -> this __is __example -> th@@ is __is __ex@@ ample
 ```
 
 ### Check OOV
+Tokenizing 성능 평가에 사용되는 코드.
 ```shell
 python check_oov.py
 ```
