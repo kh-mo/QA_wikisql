@@ -19,11 +19,15 @@ def recover_bpe(line):
     return sent
 
 def recover_tokenizer(line):
-    sent = line.replace(" ","").replace("__"," ").strip()
-    if "-LRB-" in sent:
-        sent = sent.replace("-LRB-", "(")
-    if "-RRB-" in sent:
-        sent = sent.replace("-RRB-", ")")
+    sent = line.replace(" ", "").replace("__", " ").strip()
+    sent = sent.replace("-LRB-", "(").replace("-RRB-", ")")
+    sent = sent.replace("-LSB-", "[").replace("-RSB-", "]")
+    sent = sent.replace("-LCB-", "{").replace("-RCB-", "}")
+    sent = sent.replace("Jr..", "Jr.").replace("Seq..", "Seq.")
+    sent = sent.replace("etc..", "etc.").replace("Etc..", "Etc..").replace("est..","est.").replace("Est..", "Est.")
+    sent = sent.replace("Jan..", "Jan.").replace("Feb..", "Feb.").replace("Mar..", "Mar.").replace("Apr..", "Apr.")
+    sent = sent.replace("Jun..", "Jun.").replace("Jul..", "Jul.").replace("Aug..", "Aug.").replace("Sep..", "Sep.")
+    sent = sent.replace("Oct..", "Oct.").replace("Nov..", "Nov.").replace("Dec..", "Dec.")
     return sent
 
 if __name__ == "__main__":
