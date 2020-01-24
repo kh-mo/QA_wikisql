@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     for type in types:
         infile = open(os.path.join(os.getcwd(), "preprocess/"+type+"_token.txt"), 'r', encoding='utf-8')
-        outfile = open(os.path.join(os.getcwd(), "preprocess/restore_"+type+"_token.txt"), 'w', encoding='utf-8')
+        outfile = open(os.path.join(os.getcwd(), "preprocess/"+type+"_restore_token.txt"), 'w', encoding='utf-8')
 
         for line in infile:
             outfile.write(recover_tokenizer(line))
