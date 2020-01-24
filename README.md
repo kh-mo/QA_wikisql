@@ -1,8 +1,10 @@
 # QA with WikiSQL
 
+
 ## Task 설명
 - 자연어를 통해 인간과 컴퓨터의 상호작용을 연구하는 분야, Natural Language Interface(NLI)
 - 자연언어를 SQL 쿼리문으로 변화시켜주는 연구 분야(NL2SQL)
+
 
 ## 데이터 셋
 - WikiSQL 데이터 셋 활용([링크](https://github.com/salesforce/WikiSQL))
@@ -19,29 +21,27 @@ Dev | 8,421개 | 2,615개 |
 Test | 15,878개 | 5,004개 |
 Total | 80,654개 | 24,241개 |
 
-## 평가
-### 리더보드
-*모델* | *Dev LFA* | *Dev EA* | *Test LFA* | *Test EA* |
-:---: | :---: | :---: | :---: | :---: |
-model1 | 0.0 | 0.0 | 0.0 | 0.0 |
-baseline | 0.0 | 0.0 | 0.0 | 0.0 |
 
-### Tokenizing 성능평가
+## 평가
+### 1. Tokenizing 성능평가
 voca size와 sequence length 사이에는 trade-off 관계가 존재한다.
-Voca가 많아질수록 sequence length는 줄어들게 된다.
-다만 voca가 많아지면 UNK도 증가하게 된다.
+Voca가 많아질수록 sequence length는 줄어들게 되나 UNK 증가하게 된다.
 
 *Tokenizing 유형* | *Train Voca* | *Train Length* | *Dev UNK* | *Test UNK* |
 :---: | :---: | :---: | :---: | :---: |
 stanford + BPE_0(None) | 55,462 | 5.39 | 5,204 | 10,016 |
 
+### 2. NL2SQL 리더보드
+- Execution Accuracy(EA) : 쿼리 실행 결과가 정확한 결과를 반환하는지 여부
+- Logical Form Accuary(LFA) : 쿼리문이 정답과 일치하는 여부
 
-### 평가지표
-- Execution Accuracy : 쿼리 실행 결과가 정확한 결과를 반환하는지 여부
-- Logical Form Accuary : 쿼리문이 정답과 일치하는 여부
+*모델* | *Dev LFA* | *Dev EA* | *Test LFA* | *Test EA* |
+:---: | :---: | :---: | :---: | :---: |
+model1 | 0.0 | 0.0 | 0.0 | 0.0 |
+baseline | 0.0 | 0.0 | 0.0 | 0.0 |
 
-## Getting Start
 
+## Getting Start 
 ### Requirement
 - python 3
 - [WikiSQL](https://github.com/salesforce/WikiSQL)
@@ -65,7 +65,7 @@ pip install -r requirements.txt
 tar xvjf data.tar.bz2
 ```
 
-### Do EDA
+### EDA
 데이터 수, 테이블 수, [\[1\]](#Reference)에 작성된 figure 5의 question lengths, number of columns 그림 확인.
 ```shell
 python wikisqlEDA.py
@@ -79,6 +79,11 @@ python stanford_parsing.py
 python bpe.py
 
 this is example -> this __is __example -> th@@ is __is __ex@@ ample
+```
+
+### Check OOV
+```shell
+python check_oov.py
 ```
 
 ### Restoring
@@ -96,4 +101,6 @@ python evaluate.py --source_file=data/dev.jsonl --db_file=data/dev.db --pred_fil
 ```
 
 ## Reference
-- [1] [SEQ2SQL: GENERATING STRUCTURED QUERIES FROM NATURAL LANGUAGE USING REINFORCEMENT LEARNING](https://arxiv.org/pdf/1709.00103.pdf), arXiv 2017
+- [1] [SEQ2SQL: Generating Structured Queries From Natural Language Using Reinforcement Learning](https://arxiv.org/pdf/1709.00103.pdf), arXiv 2017
+- [2] [Neural Machine Translation of Rare Words with Subword Units](https://arxiv.org/pdf/1508.07909.pdf), ACL 2016 
+- [3] [BPE-Dropout: Simple and Effective Subword Regularization](https://arxiv.org/pdf/1910.13267.pdf), arXiv 2019
