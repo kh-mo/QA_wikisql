@@ -92,7 +92,7 @@ BPE와 stanford parser결과를 원래 문장으로 복원
 ```shell
 python restore.py
 
-th@@ is __is __ex@@ ample -> th@@is__is__ex@@ample -> this__is__example
+th@@ is __is __ex@@ ample -> th@@is__is__ex@@ample -> this__is__example -> this is example
 ```
 
 ### Get Result
