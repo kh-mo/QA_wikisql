@@ -26,8 +26,9 @@ Total | 80,654개 | 24,241개 |
 ### 1. Tokenizing 성능평가
 voca size와 sequence length 사이에는 trade-off 관계가 존재한다.
 Voca가 많아질수록 sequence length는 줄어들게 되나 UNK 증가하게 된다.
+Subword를 사용해서 voca size를 획기적으로 줄일 수 있다.
 
-*Tokenizing 유형* | *Train Voca* | *Train Length* | *Dev UNK* | *Test UNK* |
+*Tokenizing 유형* | *Train Voca* | *Train Sequence Length* | *Dev UNK* | *Test UNK* |
 :---: | :---: | :---: | :---: | :---: |
 stanford + BPE_0(None) | 55,992 | 5.38 | 5,259 | 10,113 |
 stanford + BPE_1000 | 0 | 0 | 0 | 0 |
@@ -83,7 +84,7 @@ Dataset의 question과 table column name을 유형별(train, dev, test)로 모�
 이후 [\[2\]](#Reference), [\[3\]](#Reference) 알고리즘을 적용하여 강건한 input 제작.
 ```shell
 python stanford_parsing.py
-python bpe.py --merges=1000
+python bpe.py --get_rules=True --merges=1000
 
 this is example -> this __is __example -> th@@ is __is __ex@@ ample
 ```

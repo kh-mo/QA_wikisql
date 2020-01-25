@@ -23,6 +23,7 @@ def set_hyperparameters():
     parser.add_argument("--rule_file", default=os.path.join(os.getcwd(), "preprocess/rules.txt"))
 
     # option
+    parser.add_argument("--get_rules", type=str, default="False")
     parser.add_argument("--include_character_unit", action="store_true")
     parser.add_argument("--num_symbols", type=int, default=10000000)
     parser.add_argument("--min_frequency", type=int, default=2)
@@ -414,10 +415,11 @@ def read_vocabulary(vocab_file):
 if __name__ == "__main__":
     args = set_hyperparameters()
     print("set hyperparameter")
-    # rules = learn_bpe(args)
-    # print("get rules")
-    # save_rule_file(rules, args)
-    # print("save rules")
+    if args.get_rules == "True":
+        rules = learn_bpe(args)
+        print("get rules")
+        save_rule_file(rules, args)
+        print("save rules")
     apply_bpe(args)
     print("apply bpe")
     print("Done.")
