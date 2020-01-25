@@ -17,25 +17,20 @@ from collections import Counter, defaultdict
 def set_hyperparameters():
     parser = argparse.ArgumentParser()
 
-    # input file
-    parser.add_argument("--train_infile", default=os.path.join(os.getcwd(), "preprocess/train.txt"))
-    parser.add_argument("--test_infile", default=os.path.join(os.getcwd(), "preprocess/test.txt"))
-    parser.add_argument("--dev_infile", default=os.path.join(os.getcwd(), "preprocess/dev.txt"))
+    # file
+    parser.add_argument("--train_infile", default=os.path.join(os.getcwd(), "preprocess/train_token_basic.txt"))
     parser.add_argument("--voca", default=os.path.join(os.getcwd(), "preprocess/voca.txt"))
-
-    # output file
     parser.add_argument("--rule_file", default=os.path.join(os.getcwd(), "preprocess/rules.txt"))
-    parser.add_argument("--test_outfile", default=os.path.join(os.getcwd(), "preprocess/test_bpe.txt"))
 
     # option
     parser.add_argument("--include_character_unit", action="store_true")
-    parser.add_argument("--num_symbols", type=int, default=10000)
+    parser.add_argument("--num_symbols", type=int, default=10000000)
     parser.add_argument("--min_frequency", type=int, default=2)
     parser.add_argument("--verbose", type=str, default="false")
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--glossaries", type=str, nargs='+', default=None)
     parser.add_argument("--separator", type=str, default="@@")
-    parser.add_argument('--merges', type=int, default=-1)
+    parser.add_argument('--merges', type=int, default=3000, help="-1 은 모든 rule을 사용함을 의미")
     args = parser.parse_args()
     return args
 
@@ -55,6 +50,7 @@ def learn_bpe(args):
     stats, indices = get_pair_statistics(sorted_vocab)
 
     # 개별 유닛수를 구해 전체 단어 수에서 제외(마지막 개별 유닛은 살리고 중간 유닛은 버린다)
+    # 개별 유닛도 전체 단어에 포함된다
     if args.include_character_unit:
         uniq_char_internal = set()
         uniq_char_final = set()
@@ -97,6 +93,7 @@ def get_vocabulary(file):
 
 def get_pair_statistics(file):
     stats = defaultdict(int)
+    # dict 안의 dict, {key : {key : value}} 구조, {(prev_char, char) : {1 : 1}}
     indices = defaultdict(lambda: defaultdict(int))
 
     for i, (word, freq) in enumerate(file):
@@ -186,10 +183,12 @@ def save_rule_file(file, args):
         outfile.write('{0} {1}\n'.format(*most_frequent))
 
 def apply_bpe(args):
-    infile = open(args.test_infile, "r", encoding="utf-8")
-    outfile = open(args.test_outfile, "w", encoding="utf-8")
-    for line in infile:
-        outfile.write(bpe_process_line(line, args))
+    types = ["train", "dev", "test"]
+    for type in types:
+        infile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_token_basic.txt"), "r", encoding="utf-8")
+        outfile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_bpe_" + str(args.merges) + ".txt"), "w", encoding="utf-8")
+        for line in infile:
+            outfile.write(bpe_process_line(line, args))
 
 def bpe_process_line(line, args):
     '''
@@ -416,9 +415,9 @@ if __name__ == "__main__":
     args = set_hyperparameters()
     print("set hyperparameter")
     # rules = learn_bpe(args)
-    print("get rules")
+    # print("get rules")
     # save_rule_file(rules, args)
-    print("save rules")
+    # print("save rules")
     apply_bpe(args)
     print("apply bpe")
     print("Done.")

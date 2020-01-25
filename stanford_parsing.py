@@ -84,7 +84,7 @@ def make_tokenizing_data(path):
         origin_data = open(os.path.join(path, type + ".txt"), 'r', encoding='utf-8').readlines()
 
         # tokenizing
-        tokenizing_path = os.path.join(path, type + "_token.txt")
+        tokenizing_path = os.path.join(path, type + "_token_basic.txt")
         token_check_idx = make_check_idx(tokenizing_path)
         with open(tokenizing_path, "a", encoding="utf-8") as tw:
             for idx, line in enumerate(origin_data):
@@ -96,7 +96,7 @@ def make_tokenizing_data(path):
         print("word {} tokenizing done.".format(type))
 
         # lemmatizing
-        lemmatization_path = os.path.join(path, type + "_lemma.txt")
+        lemmatization_path = os.path.join(path, type + "_lemma_basic.txt")
         lemma_check_idx = make_check_idx(lemmatization_path)
         with open(lemmatization_path, "a", encoding="utf-8") as lw:
             for idx, line in enumerate(origin_data):
@@ -122,8 +122,8 @@ if __name__ == "__main__":
 # os.chdir("C:\\Users\\mosi\\Desktop\\workspace\\nli/QA_wikisql")
 # types="dev"
 # origin_data = open(os.path.join(os.getcwd(), "preprocess/"+types+".txt"), 'r', encoding='utf-8').readlines()
-# origin_data2 = open(os.path.join(os.getcwd(), "preprocess/"+types+"_token.txt"), 'r', encoding='utf-8').readlines()
-# origin_data3 = open(os.path.join(os.getcwd(), "preprocess/"+types+"_lemma.txt"), 'r', encoding='utf-8').readlines()
+# origin_data2 = open(os.path.join(os.getcwd(), "preprocess/"+types+"_token_-1.txt"), 'r', encoding='utf-8').readlines()
+# origin_data3 = open(os.path.join(os.getcwd(), "preprocess/"+types+"_lemma_-1.txt"), 'r', encoding='utf-8').readlines()
 # print(len(origin_data))
 # print(len(origin_data2))
 # print(len(origin_data3))

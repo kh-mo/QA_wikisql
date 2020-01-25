@@ -30,6 +30,13 @@ Voca가 많아질수록 sequence length는 줄어들게 되나 UNK 증가하게 
 *Tokenizing 유형* | *Train Voca* | *Train Length* | *Dev UNK* | *Test UNK* |
 :---: | :---: | :---: | :---: | :---: |
 stanford + BPE_0(None) | 55,992 | 5.38 | 5,259 | 10,113 |
+stanford + BPE_1000 | 0 | 0 | 0 | 0 |
+stanford + BPE_2000 | 0 | 0 | 0 | 0 |
+stanford + BPE_3000 | 4,311 | 7.5 | 83 | 163 |
+stanford + BPE_5000 | 6,277 | 6.95 | 85 | 167 |
+stanford + BPE_7000 | 8,228 | 6.66 | 88 | 174 |
+stanford + BPE_10000 | 0 | 0 | 0 | 0 |
+stanford + BPE_30000 | 0 | 0 | 0 | 0 |
 
 ### 2. NL2SQL 리더보드
 - Execution Accuracy(EA) : 쿼리 실행 결과가 정확한 결과를 반환하는지 여부
@@ -76,7 +83,7 @@ Dataset의 question과 table column name을 유형별(train, dev, test)로 모�
 이후 [\[2\]](#Reference), [\[3\]](#Reference) 알고리즘을 적용하여 강건한 input 제작.
 ```shell
 python stanford_parsing.py
-python bpe.py
+python bpe.py --merges=1000
 
 this is example -> this __is __example -> th@@ is __is __ex@@ ample
 ```
@@ -84,14 +91,14 @@ this is example -> this __is __example -> th@@ is __is __ex@@ ample
 ### Check OOV
 Tokenizing 성능 평가에 사용되는 코드.
 ```shell
-python check_oov.py
+python check_oov.py --merges=1000 --use_bpe=True
 ```
 
 ### Restoring
 BPE와 stanford parser결과를 원래 문장으로 복원
 공백제거 -> @@를 빈 공간으로 치환 -> __를 띄어쓰기로 치환
 ```shell
-python restore.py
+python restore.py --merges=1000 --use_bpe=True
 
 th@@ is __is __ex@@ ample -> th@@is__is__ex@@ample -> this__is__example -> this is example
 ```

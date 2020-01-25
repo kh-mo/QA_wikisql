@@ -5,21 +5,17 @@ import argparse
 
 def set_hyperparameters():
     parser = argparse.ArgumentParser()
-
-    # input file
-    parser.add_argument("--infile", default=os.path.join(os.getcwd(), "preprocess/test_bpe.txt"))
-
-    # output file
-    parser.add_argument("--outfile", default=os.path.join(os.getcwd(), "preprocess/restore_test_bpe.txt"))
+    parser.add_argument('--merges', type=int, default=-1)
+    parser.add_argument('--use_bpe', type=str, default="False")
     args = parser.parse_args()
     return args
 
 def recover_bpe(line):
-    sent = line.replace("@@ ", '')
+    sent = line.replace(" ", "").replace("@@", '').replace("__", " ")
     return sent
 
 def recover_tokenizer(line):
-    sent = line.replace(" ", "").replace("__", " ").strip()
+    sent = line.strip()
     sent = sent.replace("-LRB-", "(").replace("-RRB-", ")")
     sent = sent.replace("-LSB-", "[").replace("-RSB-", "]")
     sent = sent.replace("-LCB-", "{").replace("-RCB-", "}")
@@ -35,11 +31,15 @@ if __name__ == "__main__":
     types = ["train", "dev", "test"]
 
     for type in types:
-        infile = open(os.path.join(os.getcwd(), "preprocess/"+type+"_token.txt"), 'r', encoding='utf-8')
-        outfile = open(os.path.join(os.getcwd(), "preprocess/"+type+"_restore_token.txt"), 'w', encoding='utf-8')
+        if args.use_bpe == "True":
+            infile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_bpe_" + str(args.merges) + ".txt"), 'r', encoding='utf-8')
+            outfile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_restore_bpe_" + str(args.merges) + ".txt"), 'w', encoding='utf-8')
+        else:
+            infile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_token_basic.txt"), 'r', encoding='utf-8')
+            outfile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_restore_token_basic.txt"), 'w', encoding='utf-8')
 
         for line in infile:
-            outfile.write(recover_tokenizer(line))
+            outfile.write(recover_tokenizer(recover_bpe(line)))
             outfile.write("\n")
             # outfile.write(recover_tokenizer(recover_bpe(line)))
 
