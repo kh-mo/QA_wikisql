@@ -50,17 +50,6 @@ def learn_bpe(args):
     # stats는 특정 단어 페어가 등장한 총 수, indices는 해당 단어 페어가 등장한 위치
     stats, indices = get_pair_statistics(sorted_vocab)
 
-    # 개별 유닛수를 구해 전체 단어 수에서 제외(마지막 개별 유닛은 살리고 중간 유닛은 버린다)
-    # 개별 유닛도 전체 단어에 포함된다
-    if args.include_character_unit:
-        uniq_char_internal = set()
-        uniq_char_final = set()
-        for word in vocab:
-            for char in word[:-1]:
-                uniq_char_internal.add(char)
-            uniq_char_final.add(word[-1])
-        args.num_symbols -= len(uniq_char_internal) + len(uniq_char_final)
-
     for i in range(args.num_symbols):
         # 가장 빈도가 높은 pair 획득
         if stats:

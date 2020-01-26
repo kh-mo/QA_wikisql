@@ -31,13 +31,13 @@ Subword를 사용해서 voca size를 획기적으로 줄일 수 있다.
 *Tokenizing 유형* | *Train Voca* | *Train Sequence Length* | *Dev UNK* | *Test UNK* |
 :---: | :---: | :---: | :---: | :---: |
 stanford + BPE_0(None) | 55,992 | 5.38 | 5,259 | 10,113 |
-stanford + BPE_1000 | 0 | 0 | 0 | 0 |
-stanford + BPE_2000 | 0 | 0 | 0 | 0 |
+stanford + BPE_1000 | 2,332 | 9.17 | 83 | 161 |
+stanford + BPE_2000 | 3,325 | 8.02 | 83 | 162 |
 stanford + BPE_3000 | 4,311 | 7.5 | 83 | 163 |
 stanford + BPE_5000 | 6,277 | 6.95 | 85 | 167 |
 stanford + BPE_7000 | 8,228 | 6.66 | 88 | 174 |
-stanford + BPE_10000 | 0 | 0 | 0 | 0 |
-stanford + BPE_30000 | 0 | 0 | 0 | 0 |
+stanford + BPE_10000 | 11,124 | 6.39 | 92 | 191 |
+ stanford + BPE_30000 | 28,957 | 5.8 | 242 | 427 |
 
 ### 2. NL2SQL 리더보드
 - Execution Accuracy(EA) : 쿼리 실행 결과가 정확한 결과를 반환하는지 여부
