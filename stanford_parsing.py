@@ -42,9 +42,10 @@ def make_dir(path):
     if not os.path.isdir(path):  # 폴더 없으면 생성 있으면 패스
         os.mkdir(path)
         print("complete making directory")
-    print("Directory already exist")
+    else:
+        print("Directory already exist")
 
-def make_origin_data(path):
+def get_base_data(path):
     # read type question, header file
     types = ["train", "dev", "test"]
     for type in types:
@@ -55,17 +56,28 @@ def make_origin_data(path):
         ts = open(table_path).readlines()  # table sentence
 
         # original data
-        with open(os.path.join(path, type + ".txt"), "w", encoding="utf-8") as w:
-            try:
-                for line in qs:
-                    w.write(replace_origin_preprocessing(json.loads(line)["question"]))
-                    w.write("\n")
-                for line in ts:
-                    for word in json.loads(line)["header"]:
-                        w.write(replace_origin_preprocessing(word))
-                        w.write("\n")
-            except IndexError as e:
-                pass
+        with open(os.path.join(path, type + ".jsonl"), "a", encoding="utf-8") as a:
+            form = {"nli": "", "col": [], "table_id": "", "id": "", "name": ""}
+            check_idx = make_check_idx(os.path.join(path, type + ".jsonl"))
+            for idx, line in enumerate(qs):
+                if idx >= check_idx:
+                    doc = json.loads(line)
+                    form["nli"] += replace_origin_preprocessing(doc["question"])
+                    form["table_id"] += doc["table_id"]
+                    for table in ts:
+                        table_doc = json.loads(table)
+                        if table_doc['id'] == doc['table_id']:
+                            try:
+                                form["col"] = table_doc['header']
+                                form["id"] += table_doc["id"]
+                                form["name"] += table_doc["name"]
+                            except KeyError as e:
+                                break
+                            break
+                    a.write(json.dumps(form, ensure_ascii=False))
+                    a.write("\n")
+                    form = {"nli": "", "col": [], "table_id": "", "id": "", "name": ""}
+
         print("get {} original done.".format(type))
 
 def make_check_idx(path):
@@ -110,13 +122,13 @@ def make_tokenizing_data(path):
 if __name__ == "__main__":
     preprocessed_dir = os.path.join(os.getcwd(), "preprocess")
     make_dir(preprocessed_dir)
-    make_origin_data(preprocessed_dir)
-    while True:
-        try:
-            make_tokenizing_data(preprocessed_dir)
-            break
-        except requests.exceptions.ConnectionError:
-            continue
+    get_base_data(preprocessed_dir)
+    # while True:
+    #     try:
+    #         make_tokenizing_data(preprocessed_dir)
+    #         break
+    #     except requests.exceptions.ConnectionError:
+    #         continue
 
 # import os
 # os.chdir("C:\\Users\\mosi\\Desktop\\workspace\\nli/QA_wikisql")
