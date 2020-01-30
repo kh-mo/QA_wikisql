@@ -35,6 +35,9 @@ def replace_tokenizing_preprocessing(word):
 
 def write_tokening_preprocessing(word):
     # parsing 이후 "__ "을 "__"로 대체하여 본래 띄어쓰기가 있었던 지점을 표현한다(추후 이것을 이용해 원래 문장으로 복원한다)
+    word = word.replace("-LRB-", "(").replace("-RRB-", ")")
+    word = word.replace("-LSB-", "[").replace("-RSB-", "]")
+    word = word.replace("-LCB-", "{").replace("-RCB-", "}")
     return word.replace("__ ", "__").strip()
 
 def make_dir(path):
@@ -115,14 +118,20 @@ def make_tokenizing_data(path):
 
         print("word {} tokenizing done.".format(type))
 
+def delete_base_data(path):
+    types = ["train", "dev", "test"]
+    for type in types:
+        os.remove(os.path.join(os.getcwd(), "preprocess/"+type+".jsonl"))
+
 if __name__ == "__main__":
     preprocessed_dir = os.path.join(os.getcwd(), "preprocess")
     make_dir(preprocessed_dir)
-    get_base_data(preprocessed_dir)
+    # get_base_data(preprocessed_dir)
     while True:
         try:
             make_tokenizing_data(preprocessed_dir)
             break
         except requests.exceptions.ConnectionError:
             continue
+    # delete_base_data(preprocessed_dir)
 
