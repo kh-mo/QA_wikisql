@@ -126,7 +126,7 @@ def delete_base_data(path):
 if __name__ == "__main__":
     preprocessed_dir = os.path.join(os.getcwd(), "preprocess")
     make_dir(preprocessed_dir)
-    # get_base_data(preprocessed_dir)
+    get_base_data(preprocessed_dir)
     while True:
         try:
             make_tokenizing_data(preprocessed_dir)
