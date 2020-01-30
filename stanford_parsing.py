@@ -126,12 +126,3 @@ if __name__ == "__main__":
         except requests.exceptions.ConnectionError:
             continue
 
-# import os
-# os.chdir("C:\\Users\\mosi\\Desktop\\workspace\\nli/QA_wikisql")
-# types="dev"
-# origin_data = open(os.path.join(os.getcwd(), "preprocess/"+types+".txt"), 'r', encoding='utf-8').readlines()
-# origin_data2 = open(os.path.join(os.getcwd(), "preprocess/"+types+"_token_-1.txt"), 'r', encoding='utf-8').readlines()
-# origin_data3 = open(os.path.join(os.getcwd(), "preprocess/"+types+"_lemma_-1.txt"), 'r', encoding='utf-8').readlines()
-# print(len(origin_data))
-# print(len(origin_data2))
-# print(len(origin_data3))
