@@ -10,6 +10,7 @@ oov, voca, glossary 추가 필요
 import os
 import re
 import copy
+import json
 import random
 import argparse
 from collections import Counter, defaultdict
@@ -18,7 +19,7 @@ def set_hyperparameters():
     parser = argparse.ArgumentParser()
 
     # file
-    parser.add_argument("--train_infile", default=os.path.join(os.getcwd(), "preprocess/train_token_basic.txt"))
+    parser.add_argument("--train_infile", default=os.path.join(os.getcwd(), "preprocess/train_s.jsonl"))
     parser.add_argument("--voca", default=os.path.join(os.getcwd(), "preprocess/voca.txt"))
     parser.add_argument("--rule_file", default=os.path.join(os.getcwd(), "preprocess/rules.txt"))
 
@@ -76,9 +77,14 @@ def learn_bpe(args):
 def get_vocabulary(file):
     vocab = Counter()
     for line in file:
-        for word in line.strip("\r\n ").split(' '):
+        doc = json.loads(line)
+        for word in doc['nli_s'].strip("\r\n ").split(' '):
             if word:
                 vocab[word] += 1
+        for col in doc['col_s']:
+            for word in col.strip("\r\n ").split(' '):
+                if word:
+                    vocab[word] += 1
     return vocab
 
 def get_pair_statistics(file):
@@ -175,10 +181,16 @@ def save_rule_file(file, args):
 def apply_bpe(args):
     types = ["train", "dev", "test"]
     for type in types:
-        infile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_token_basic.txt"), "r", encoding="utf-8")
-        outfile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_bpe_" + str(args.merges) + ".txt"), "w", encoding="utf-8")
+        infile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_s.jsonl"), "r", encoding="utf-8")
+        outfile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_sb_" + str(args.merges) + ".jsonl"), "w", encoding="utf-8")
         for line in infile:
-            outfile.write(bpe_process_line(line, args))
+            doc = json.loads(line)
+            doc['nli_sb'] = bpe_process_line(doc['nli_s'], args)
+            doc['col_sb'] = []
+            for word in doc['col_s']:
+                doc['col_sb'].append(bpe_process_line(word, args))
+            outfile.write(json.dumps(doc, ensure_ascii=False))
+            outfile.write("\n")
 
 def bpe_process_line(line, args):
     '''
