@@ -93,42 +93,38 @@ def make_tokenizing_data(path):
     client = corenlp.CoreNLPClient(annotators="tokenize ssplit pos lemma ner depparse".split())
     types = ["train", "dev", "test"]
     for type in types:
-        origin_data = open(os.path.join(path, type + ".txt"), 'r', encoding='utf-8').readlines()
+        origin_data = open(os.path.join(path, type + ".jsonl"), 'r', encoding='utf-8').readlines()
 
         # tokenizing
-        tokenizing_path = os.path.join(path, type + "_token_basic.txt")
+        tokenizing_path = os.path.join(path, type + "_s.jsonl")
         token_check_idx = make_check_idx(tokenizing_path)
-        with open(tokenizing_path, "a", encoding="utf-8") as tw:
+        with open(tokenizing_path, "a", encoding="utf-8") as a:
             for idx, line in enumerate(origin_data):
                 if idx >= token_check_idx:
-                    ann = client.annotate(replace_tokenizing_preprocessing(line))
-                    # corenlp로 파싱된 단어들을 space로 분할하여 특수토큰 '__'을 추가한 문장으로 저장
-                    tw.write(write_tokening_preprocessing(" ".join([t.word for sent in ann.sentence for t in sent.token])))
-                    tw.write("\n")
-        print("word {} tokenizing done.".format(type))
+                    doc = json.loads(line)
+                    ann = client.annotate(replace_tokenizing_preprocessing(doc['nli']))
+                    doc['nli_s'] = write_tokening_preprocessing(" ".join([t.word for sent in ann.sentence for t in sent.token]))
+                    doc['col_s'] = []
+                    for col in doc['col']:
+                        ann = client.annotate(replace_tokenizing_preprocessing(col))
+                        doc['col_s'].append(write_tokening_preprocessing(" ".join([t.word for sent in ann.sentence for t in sent.token])))
 
-        # lemmatizing
-        lemmatization_path = os.path.join(path, type + "_lemma_basic.txt")
-        lemma_check_idx = make_check_idx(lemmatization_path)
-        with open(lemmatization_path, "a", encoding="utf-8") as lw:
-            for idx, line in enumerate(origin_data):
-                if idx >= lemma_check_idx:
-                    ann = client.annotate(replace_tokenizing_preprocessing(line))
-                    # corenlp로 파싱된 question 단어들을 space로 특수토큰 '__'을 추가한 lemmatization 문장으로 저장
-                    lw.write(write_tokening_preprocessing(" ".join([t.lemma for sent in ann.sentence for t in sent.token])))
-                    lw.write("\n")
-        print("word {} lemmatization done.".format(type))
+                    # corenlp로 파싱된 단어들을 space로 분할하여 특수토큰 '__'을 추가한 문장으로 저장
+                    a.write(json.dumps(doc, ensure_ascii=False))
+                    a.write("\n")
+
+        print("word {} tokenizing done.".format(type))
 
 if __name__ == "__main__":
     preprocessed_dir = os.path.join(os.getcwd(), "preprocess")
     make_dir(preprocessed_dir)
     get_base_data(preprocessed_dir)
-    # while True:
-    #     try:
-    #         make_tokenizing_data(preprocessed_dir)
-    #         break
-    #     except requests.exceptions.ConnectionError:
-    #         continue
+    while True:
+        try:
+            make_tokenizing_data(preprocessed_dir)
+            break
+        except requests.exceptions.ConnectionError:
+            continue
 
 # import os
 # os.chdir("C:\\Users\\mosi\\Desktop\\workspace\\nli/QA_wikisql")
