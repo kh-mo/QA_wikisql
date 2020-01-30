@@ -9,9 +9,9 @@ def count_voca(dataset, args):
     for sent in dataset:
         doc = json.loads(sent)
         if args.use_bpe == "True":
-            words = (doc['nli_sb'] + ' ' + ' '.join(doc['col_sb'])).split()
+            words = (doc['nl_sb'] + ' ' + ' '.join(doc['col_sb'])).split()
         else:
-            words = (doc['nli_s'] + ' ' + ' '.join(doc['col_s'])).split()
+            words = (doc['nl_s'] + ' ' + ' '.join(doc['col_s'])).split()
         length.append(len(words))
         for word in words:
             voca[word] += 1
@@ -23,9 +23,9 @@ def check_voca(dataset, check_list, args):
     for sent in dataset:
         doc = json.loads(sent)
         if args.use_bpe == "True":
-            words = (doc['nli_sb'] + ' ' + ' '.join(doc['col_sb'])).split()
+            words = (doc['nl_sb'] + ' ' + ' '.join(doc['col_sb'])).split()
         else:
-            words = (doc['nli_s'] + ' ' + ' '.join(doc['col_s'])).split()
+            words = (doc['nl_s'] + ' ' + ' '.join(doc['col_s'])).split()
         for word in words:
             if word not in check_list:
                 voca[word] += 1

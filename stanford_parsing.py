@@ -60,12 +60,12 @@ def get_base_data(path):
 
         # original data
         with open(os.path.join(path, type + ".jsonl"), "a", encoding="utf-8") as a:
-            form = {"nli": "", "col": [], "table_id": "", "id": "", "name": ""}
+            form = {"nl": "", "col": [], "table_id": "", "id": "", "name": ""}
             check_idx = make_check_idx(os.path.join(path, type + ".jsonl"))
             for idx, line in enumerate(qs):
                 if idx >= check_idx:
                     doc = json.loads(line)
-                    form["nli"] += replace_origin_preprocessing(doc["question"])
+                    form["nl"] += replace_origin_preprocessing(doc["question"])
                     form["table_id"] += doc["table_id"]
                     for table in ts:
                         table_doc = json.loads(table)
@@ -79,7 +79,7 @@ def get_base_data(path):
                             break
                     a.write(json.dumps(form, ensure_ascii=False))
                     a.write("\n")
-                    form = {"nli": "", "col": [], "table_id": "", "id": "", "name": ""}
+                    form = {"nl": "", "col": [], "table_id": "", "id": "", "name": ""}
 
         print("get {} original done.".format(type))
 
@@ -105,8 +105,8 @@ def make_tokenizing_data(path):
             for idx, line in enumerate(origin_data):
                 if idx >= token_check_idx:
                     doc = json.loads(line)
-                    ann = client.annotate(replace_tokenizing_preprocessing(doc['nli']))
-                    doc['nli_s'] = write_tokening_preprocessing(" ".join([t.word for sent in ann.sentence for t in sent.token]))
+                    ann = client.annotate(replace_tokenizing_preprocessing(doc['nl']))
+                    doc['nl_s'] = write_tokening_preprocessing(" ".join([t.word for sent in ann.sentence for t in sent.token]))
                     doc['col_s'] = []
                     for col in doc['col']:
                         ann = client.annotate(replace_tokenizing_preprocessing(col))

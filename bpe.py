@@ -78,7 +78,7 @@ def get_vocabulary(file):
     vocab = Counter()
     for line in file:
         doc = json.loads(line)
-        for word in doc['nli_s'].strip("\r\n ").split(' '):
+        for word in doc['nl_s'].strip("\r\n ").split(' '):
             if word:
                 vocab[word] += 1
         for col in doc['col_s']:
@@ -185,7 +185,7 @@ def apply_bpe(args):
         outfile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_sb_" + str(args.merges) + ".jsonl"), "w", encoding="utf-8")
         for line in infile:
             doc = json.loads(line)
-            doc['nli_sb'] = bpe_process_line(doc['nli_s'], args)
+            doc['nl_sb'] = bpe_process_line(doc['nl_s'], args)
             doc['col_sb'] = []
             for word in doc['col_s']:
                 doc['col_sb'].append(bpe_process_line(word, args))

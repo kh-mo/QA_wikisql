@@ -39,12 +39,12 @@ if __name__ == "__main__":
         for line in infile:
             doc = json.loads(line)
             if args.use_bpe == "True":
-                doc['nli_restore'] = recover_tokenizer(recover_bpe(doc['nli_bs']))
+                doc['nl_restore'] = recover_tokenizer(recover_bpe(doc['nl_bs']))
                 doc['col_restore'] = []
                 for word in doc['col_bs']:
                     doc['col_restore'].append(recover_tokenizer(recover_bpe(word)))
             else:
-                doc['nli_restore'] = recover_tokenizer(recover_bpe(doc['nli_b']))
+                doc['nl_restore'] = recover_tokenizer(recover_bpe(doc['nl_b']))
                 doc['col_restore'] = []
                 for word in doc['col_b']:
                     doc['col_restore'].append(recover_tokenizer(recover_bpe(word)))
