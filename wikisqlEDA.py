@@ -13,8 +13,9 @@ if __name__ == "__main__":
         dev_data = de.readlines()
         test_data = ts.readlines()
 
-    print("train lines : {}, dev lines : {}, test lines : {}".format(len(train_data), len(dev_data), len(test_data)))
-    print("dataset total : {}".format(len(train_data+dev_data+test_data)))
+    print("train : {}, dev : {}, test : {}".format(len(train_data), len(dev_data), len(test_data)))
+    print("filtered train : {}, filtered dev : {}, filtered test : {}".format(len(list(set(train_data))), len(list(set(dev_data))), len(list(set(test_data)))))
+    print("dataset total : {}, filtered dataset total : {}".format(len(train_data + dev_data + test_data), len(list(set(train_data + dev_data + test_data)))))
 
     ## table information
     tr_table = []
@@ -23,25 +24,28 @@ if __name__ == "__main__":
     criterion = "table_id"
 
     for doc in train_data:
-        tr_table.append(json.loads(doc)[criterion].split("-",maxsplit=1)[1])
+        tr_table.append(json.loads(doc)[criterion].split("-", maxsplit=1)[1])
     for doc in dev_data:
-        dev_table.append(json.loads(doc)[criterion].split("-",maxsplit=1)[1])
+        dev_table.append(json.loads(doc)[criterion].split("-", maxsplit=1)[1])
     for doc in test_data:
-        ts_table.append(json.loads(doc)[criterion].split("-",maxsplit=1)[1])
+        ts_table.append(json.loads(doc)[criterion].split("-", maxsplit=1)[1])
 
     tr_table = set(tr_table)
     dev_table = set(dev_table)
     ts_table = set(ts_table)
 
-    print("train table lines : {}, dev table lines : {}, test table lines : {}".format(len(tr_table), len(dev_table), len(ts_table)))
-    print("tables total : {}".format(len(tr_table|dev_table|ts_table)))
+    print("train table : {}, dev table : {}, test table : {}".format(len(tr_table), len(dev_table), len(ts_table)))
+    print("train & dev table : {}, filtered train & dev table : {}".format(len(tr_table) + len(dev_table), len(tr_table | dev_table)))
+    print("dev & test table : {}, filtered dev & test table : {}".format(len(dev_table) + len(ts_table), len(dev_table | ts_table)))
+    print("test & train table : {}, filtered test & train table : {}".format(len(ts_table) + len(tr_table), len(ts_table | tr_table)))
+    print("tables total : {}, filtered tables total : {}".format(len(tr_table) + len(dev_table) + len(ts_table), len(tr_table | dev_table | ts_table)))
 
     ## plot
     question_lengths = []
     query_lengths = []
     number_of_columns = []
 
-    for line in (train_data+dev_data+test_data):
+    for line in (train_data + dev_data + test_data):
         question_lengths.append(len(json.loads(line)['question'].split(' ')))
 
     train_table_path = os.path.join(os.path.dirname(os.getcwd()), 'WikiSQL/data/train.tables.jsonl')
@@ -55,14 +59,14 @@ if __name__ == "__main__":
 
     for line in (train_table_data + dev_table_data + test_table_data):
         file = json.loads(line)
-        if file["id"].split("-",maxsplit=1)[1] in list(tr_table | dev_table | ts_table):
+        if file["id"].split("-", maxsplit=1)[1] in list(tr_table | dev_table | ts_table):
             number_of_columns.append(len(file["header"]))
 
     fig = plt.figure()
     ax1 = fig.add_subplot(1, 2, 1) # row, col, index
     ax2 = fig.add_subplot(1, 2, 2)
 
-    ax1.hist(question_lengths, bins=list(range(60)), range=(0,60))
+    ax1.hist(question_lengths, bins=list(range(60)), range=(0, 60))
     ax1.set_xlabel("Question lengths")
     ax1.set_ylabel("Frequency")
 

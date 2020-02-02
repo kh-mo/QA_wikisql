@@ -8,25 +8,29 @@
 
 ## 데이터 셋
 - WikiSQL 데이터 셋 활용([링크](https://github.com/salesforce/WikiSQL))
-- 80,654개 자연어 질문, 24,241개 테이블
-- Train, Dev 중복 table : 185개
-- Dev, Test 중복 table : 57개
-- Test, Train 중복 table : 426개
-- Train, Dev, Test 동시에 중복되는 table은 없다
+- 80,654개 자연어 질문, 24,241개 테이블(paper에 작성된 기준)
+- WikiSQL에 있는 train.jsonl, test.jsonl, dev.jsonl에서 추출된 정보들.
 
-*데이터 셋* | *Questions* | *SQL tables* |
-:---: | :---: | :---: |
-Train | 56,355개 | 17,290개 |
-Dev | 8,421개 | 2,615개 |
-Test | 15,878개 | 5,004개 |
-Total | 80,654개 | 24,241개 |
+*데이터 셋* | *Questions* | *Filtered Questions* | *SQL tables* | *Filtered SQL tables* | 
+:---: | :---: | :---: | :---: | :---: |
+Train | 56,355개 | 56,226개 | 17,290개 | - |
+Dev | 8,421개 | 8,393개 | 2,615개 | - |
+Test | 15,878개 | 15,841개 | 5,004개 | - |
+Total | 80,654개 | 80,460개 | 24,909개 | 24,241개 |
 
+- 테이블 간 중복 정보
+
+*기준* | *Train_table & Dev_table* | *Dev_table & Test_table* | *Test_table & Train_table* | *Total(Train_table & Dev_table & Test_table)* | 
+:---: | :---: | :---: | :---: | :---: |
+중복 제거 전 | 19,905개 | 7,619개 | 22,294개 | 24,909개 |
+중복 제거 후 | 19,720개 | 7,562개 | 21,868개 | 24,241개 |
 
 ## 평가
 ### 1. Tokenizing 성능평가
-voca size와 sequence length 사이에는 trade-off 관계가 존재한다.
-Voca가 많아질수록 sequence length는 줄어들게 되나 UNK 증가하게 된다.
-Subword를 사용해서 voca size를 획기적으로 줄일 수 있다.
+사전크기(Voca size)와 문장의 길이(sequence length) 사이에는 트레이드오프(trade-off) 관계가 존재한다.
+사전에 들어있는 단어가 많아질수록 문장을 단어로 분해했을 때 길이는 줄어들게 된다.
+그러나 사전에 미리 지정된 단어가 많아질수록 미지정 된 단어(Unknown, UNK)도 같이 증가하게 된다.
+Subword를 사용해서 사전크기와 UNK를 획기적으로 줄이는 연구(BPE)가 [\[2, 3\]](#Reference)에 나와있다.
 
 *Tokenizing 유형* | *Train Voca* | *Train Sequence Length* | *Dev UNK* | *Test UNK* |
 :---: | :---: | :---: | :---: | :---: |
@@ -56,6 +60,7 @@ baseline | 0.0 | 0.0 | 0.0 | 0.0 |
 - [corenlp for python](https://github.com/stanfordnlp/python-stanford-corenlp)
 
 ### Folder Structure
+Home directory : QA_wikisql
 ```
 nli
  |--- QA_wikisql
@@ -63,10 +68,8 @@ nli
 ```
 
 ### Download Dataset
-salesforce의 WikiSQL 깃 레포지토리로부터 데이터셋과 평가를 위한 코드를 다운로드 받는다.
+salesforce의 WikiSQL 깃 레포지토리로부터 데이터 셋과 평가를 위한 코드를 다운로드 한다.
 ```shell
-from https://github.com/salesforce/WikiSQL
-
 git clone https://github.com/salesforce/WikiSQL
 cd WikiSQL
 pip install -r requirements.txt
@@ -75,6 +78,9 @@ tar xvjf data.tar.bz2
 
 ### EDA
 데이터 수, 테이블 수, [\[1\]](#Reference)에 작성된 figure 5의 question lengths, number of columns 그림 확인.
+논문에서 명시된 데이터 수와 EDA를 수행해서 얻는 데이터 수에 차이가 있으니 이를 잘 유념해서 분석을 수행해야 한다.
+질문 길이(Question lengths)는 띄어쓰기를 기준으로 분해된 단어들로 만들어진 그래프이다.
+열의 수(Numbers of columns)는 WikiSQL의 {type}.table.jsonl 중 사용된 테이블들의 header 정보로 만들어진 그래프이다. 
 ```shell
 python wikisqlEDA.py
 ```
