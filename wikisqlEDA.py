@@ -13,9 +13,11 @@ if __name__ == "__main__":
         dev_data = de.readlines()
         test_data = ts.readlines()
 
+    print("====================== question information ======================\n")
     print("train : {}, dev : {}, test : {}".format(len(train_data), len(dev_data), len(test_data)))
     print("filtered train : {}, filtered dev : {}, filtered test : {}".format(len(list(set(train_data))), len(list(set(dev_data))), len(list(set(test_data)))))
     print("dataset total : {}, filtered dataset total : {}".format(len(train_data + dev_data + test_data), len(list(set(train_data + dev_data + test_data)))))
+    print("==================================================================\n")
 
     ## table information
     tr_table = []
@@ -34,11 +36,13 @@ if __name__ == "__main__":
     dev_table = set(dev_table)
     ts_table = set(ts_table)
 
+    print("======================= table information =======================\n")
     print("train table : {}, dev table : {}, test table : {}".format(len(tr_table), len(dev_table), len(ts_table)))
     print("train & dev table : {}, filtered train & dev table : {}".format(len(tr_table) + len(dev_table), len(tr_table | dev_table)))
     print("dev & test table : {}, filtered dev & test table : {}".format(len(dev_table) + len(ts_table), len(dev_table | ts_table)))
     print("test & train table : {}, filtered test & train table : {}".format(len(ts_table) + len(tr_table), len(ts_table | tr_table)))
     print("tables total : {}, filtered tables total : {}".format(len(tr_table) + len(dev_table) + len(ts_table), len(tr_table | dev_table | ts_table)))
+    print("==================================================================\n")
 
     ## plot
     question_lengths = []
