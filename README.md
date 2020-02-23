@@ -88,6 +88,7 @@ python wikisqlEDA.py
 ### Tokenizing
 Dataset의 question과 table column name을 유형별(train, dev, test)로 모아 stanford parser로 tokenizing 진행.
 이후 [\[2\]](#Reference), [\[3\]](#Reference) 알고리즘을 적용하여 강건한 input 제작.
+Subword로 분해되지 않길 원하는 단어는 glossaries.txt 파일에 단어를 등록하면 된다.
 ```shell
 python stanford_parsing.py
 python bpe.py --get_rules=True --merges=1000

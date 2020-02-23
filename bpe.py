@@ -22,6 +22,7 @@ def set_hyperparameters():
     parser.add_argument("--train_infile", default=os.path.join(os.getcwd(), "preprocess/train_s.jsonl"))
     parser.add_argument("--voca", default=os.path.join(os.getcwd(), "preprocess/voca.txt"))
     parser.add_argument("--rule_file", default=os.path.join(os.getcwd(), "preprocess/rules.txt"))
+    parser.add_argument("--glossaries_path", default=os.path.join(os.getcwd(), "glossaries.txt"))
 
     # option
     parser.add_argument("--get_rules", type=str, default="False")
@@ -232,8 +233,9 @@ def segment_tokens(tokens, args):
     # {'ab', ('a', 'b')), key는 합쳐진 것, value는 분할된 것
     args.bpe_rules_reverse = dict([(pair[0] + pair[1], pair) for pair, i in args.bpe_rules.items()])
 
-    # glossaries 추가 고려(option)
-    args.glossaries = []
+    # subword로 쪼개지지 않을 단어 집합(회사에서 voca라고 부르는 항목)
+    args.glossaries = open(args.glossaries_path, 'r', encoding='utf-8').readlines()
+    args.glossaries_regex = re.compile('^({})$'.format('|'.join(args.glossaries) + "|" + "|".join(["__" + word for word in args.glossaries]))) if args.glossaries else None
 
     output = []
     for token in tokens:
@@ -243,7 +245,8 @@ def segment_tokens(tokens, args):
         # 1. _isolate_glossaries() 먼저 수행
         # 2. 1에서 얻어진 segment를 받아 encode 수행
         # 3. 2에서 얻어진 encode 결과물 out을 list comprehension으로 저장
-        new_word = [out for segment in _isolate_glossaries(token) for out in encode(segment, args)]
+        new_word = [out for out in encode(token, args)]
+        # new_word = [out for segment in _isolate_glossaries(token) for out in encode(segment, args)]
         # self.vocab
         # self.cache
 
@@ -254,32 +257,32 @@ def segment_tokens(tokens, args):
 
     return output
 
-def _isolate_glossaries(word):
-    # 단어 중 glossaries안에 들어있는 subword는 분해되지 않고 유지된다
-    word_segments = [word]
-    for gloss in args.glossaries:
-        # 1. word_segments에서 segment 추출
-        # 2. segment와 gloss를 isolate_glossary에서 subword 매칭 여부 탐색
-        # 3. 2에서 얻어진 out_segments 결과물을 list comprehension으로 저장
-        word_segments = [out_segments for segment in word_segments
-                             for out_segments in isolate_glossary(segment, gloss)]
-    return word_segments
-
-def isolate_glossary(word, glossary):
-    """
-    Isolate a glossary present inside a word.
-    Returns a list of subwords. In which all 'glossary' glossaries are isolated
-    For example, if 'USA' is the glossary and '1934USABUSA' the word, the return value is:
-        ['1934', 'USA', 'B', 'USA']
-    """
-    # regex equivalent of (if word == glossary or glossary not in word)
-    if re.match('^'+glossary+'$', word) or not re.search(glossary, word):
-        return [word]
-    else:
-        segments = re.split(r'({})'.format(glossary), word)
-        segments, ending = segments[:-1], segments[-1]
-        segments = list(filter(None, segments)) # Remove empty strings in regex group.
-        return segments + [ending.strip('\r\n ')] if ending != '' else segments
+# def _isolate_glossaries(word):
+#     # 단어 중 glossaries안에 들어있는 subword는 분해되지 않고 유지된다
+#     word_segments = [word]
+#     for gloss in args.glossaries:
+#         # 1. word_segments에서 segment 추출
+#         # 2. segment와 gloss를 isolate_glossary에서 subword 매칭 여부 탐색
+#         # 3. 2에서 얻어진 out_segments 결과물을 list comprehension으로 저장
+#         word_segments = [out_segments for segment in word_segments
+#                              for out_segments in isolate_glossary(segment, gloss)]
+#     return word_segments
+#
+# def isolate_glossary(word, glossary):
+#     """
+#     Isolate a glossary present inside a word.
+#     Returns a list of subwords. In which all 'glossary' glossaries are isolated
+#     For example, if 'USA' is the glossary and '1934USABUSA' the word, the return value is:
+#         ['1934', 'USA', 'B', 'USA']
+#     """
+#     # regex equivalent of (if word == glossary or glossary not in word)
+#     if re.match('^'+glossary+'$', word) or not re.search(glossary, word):
+#         return [word]
+#     else:
+#         segments = re.split(r'({})'.format(glossary), word)
+#         segments, ending = segments[:-1], segments[-1]
+#         segments = list(filter(None, segments)) # Remove empty strings in regex group.
+#         return segments + [ending.strip('\r\n ')] if ending != '' else segments
 
 def encode(token, args):
     """Encode word based on list of BPE merge operations, which are applied consecutively
@@ -289,10 +292,10 @@ def encode(token, args):
     # if not dropout and orig in cache:
     #     return cache[orig]
 
-    # # regex가 존재하고(and) 단어가 regex에 매칭될 때
-    # if glossaries_regex and glossaries_regex.match(orig):
-    #     cache[orig] = (orig,)
-    #     return (orig,)
+    # 단어가 regex에 매칭될 때 subword로 분해하지 않는다
+    if args.glossaries_regex and args.glossaries_regex.match(token):
+        # cache[token] = (token,)
+        return (token,)
 
     # 단어가 단일 character일 때
     if len(token) == 1:
