@@ -44,7 +44,7 @@ def make_dir(path):
     # make preprocess folder
     if not os.path.isdir(path):  # 폴더 없으면 생성 있으면 패스
         os.mkdir(path)
-        print("complete making directory")
+        print("complete making " + os.path.basename(path) + " directory")
     else:
         print("Directory already exist")
 
@@ -91,15 +91,15 @@ def make_check_idx(path):
         check_idx = 0
     return check_idx
 
-def make_tokenizing_data(path):
+def make_tokenizing_data(input_path, output_path):
     # corenlp parser
     client = corenlp.CoreNLPClient(annotators="tokenize ssplit pos lemma ner depparse".split())
     types = ["train", "dev", "test"]
     for type in types:
-        origin_data = open(os.path.join(path, type + ".jsonl"), 'r', encoding='utf-8').readlines()
+        origin_data = open(os.path.join(input_path, type + ".jsonl"), 'r', encoding='utf-8').readlines()
 
         # tokenizing
-        tokenizing_path = os.path.join(path, type + "_s.jsonl")
+        tokenizing_path = os.path.join(output_path, type + "_s.jsonl")
         token_check_idx = make_check_idx(tokenizing_path)
         with open(tokenizing_path, "a", encoding="utf-8") as a:
             for idx, line in enumerate(origin_data):
@@ -125,11 +125,18 @@ def delete_base_data(path):
 
 if __name__ == "__main__":
     preprocessed_dir = os.path.join(os.getcwd(), "preprocess")
+    original_dir = os.path.join(preprocessed_dir, "original")
+    stanford_dir = os.path.join(preprocessed_dir, "stanford")
+
     make_dir(preprocessed_dir)
-    get_base_data(preprocessed_dir)
+    make_dir(original_dir)
+    make_dir(stanford_dir)
+
+    get_base_data(original_dir)
+
     while True:
         try:
-            make_tokenizing_data(preprocessed_dir)
+            make_tokenizing_data(original_dir, stanford_dir)
             break
         except requests.exceptions.ConnectionError:
             continue
