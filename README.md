@@ -34,14 +34,9 @@ Subword를 사용해서 사전크기와 UNK를 획기적으로 줄이는 연구(
 
 *Tokenizing 유형* | *Train Voca* | *Train Sequence Length* | *Dev UNK* | *Test UNK* |
 :---: | :---: | :---: | :---: | :---: |
-stanford + BPE_0(None) | 55,992 | 5.38 | 5,259 | 10,113 |
-stanford + BPE_1000 | 2,332 | 9.17 | 83 | 161 |
-stanford + BPE_2000 | 3,325 | 8.02 | 83 | 162 |
-stanford + BPE_3000 | 4,311 | 7.5 | 83 | 163 |
-stanford + BPE_5000 | 6,277 | 6.95 | 85 | 167 |
-stanford + BPE_7000 | 8,228 | 6.66 | 88 | 174 |
-stanford + BPE_10000 | 11,124 | 6.39 | 92 | 191 |
- stanford + BPE_30000 | 28,957 | 5.8 | 242 | 427 |
+stanford + BPE_0(None) | 55,778 | 23.77 | 5,235 | 10,085 |
+stanford + BPE_1000 | 2,325 | 41.79 | 83 | 162 |
+stanford + BPE_3000 | 4,312 | 33.39 | 84 | 165 |
 
 ### 2. NL2SQL 리더보드
 - Execution Accuracy(EA) : 쿼리 실행 결과가 정확한 결과를 반환하는지 여부
@@ -99,8 +94,9 @@ this is example -> this __is __example -> th@@ is __is __ex@@ ample
 
 ### Check OOV
 Tokenizing 성능 평가에 사용되는 코드.
+사전도 여기서 획득한다.
 ```shell
-python check_oov.py --merges=1000 --use_bpe=True
+python check_oov.py --merges=1000
 ```
 
 ### Restoring
