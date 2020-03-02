@@ -1,11 +1,4 @@
 #-*- coding:utf-8 -*-
-'''
-{ train, dev, test }set
-dev를 이용해 OOV, unknown이 적은 규칙을 산출해야 함
-최적의 규칙이 나오면 test에 적용
-
-oov, voca, glossary 추가 필요
-'''
 
 import os
 import re
@@ -19,171 +12,24 @@ def set_hyperparameters():
     parser = argparse.ArgumentParser()
 
     # file
-    parser.add_argument("--train_infile", default=os.path.join(os.getcwd(), "preprocess/train_s.jsonl"))
-    parser.add_argument("--voca", default=os.path.join(os.getcwd(), "preprocess/voca.txt"))
-    parser.add_argument("--rule_file", default=os.path.join(os.getcwd(), "preprocess/rules.txt"))
-    parser.add_argument("--glossaries_path", default=os.path.join(os.getcwd(), "glossaries.txt"))
+    parser.add_argument("--rule_infile", default=os.path.join(os.getcwd(), "preprocess/bpe_util_data/rules.txt"))
+    parser.add_argument("--glossaries_infile", default=os.path.join(os.getcwd(), "preprocess/bpe_util_data/glossaries.txt"))
 
     # option
-    parser.add_argument("--get_rules", type=str, default="False")
-    parser.add_argument("--include_character_unit", action="store_true")
-    parser.add_argument("--num_symbols", type=int, default=10000000)
-    parser.add_argument("--min_frequency", type=int, default=2)
-    parser.add_argument("--verbose", type=str, default="false")
-    parser.add_argument("--dropout", type=float, default=0.0)
-    parser.add_argument("--glossaries", type=str, nargs='+', default=None)
     parser.add_argument("--separator", type=str, default="@@")
     parser.add_argument('--merges', type=int, default=3000, help="-1 은 모든 rule을 사용함을 의미")
     args = parser.parse_args()
     return args
 
-def learn_bpe(args):
-    infile = open(args.train_infile, "r", encoding="utf-8")
-    output = []
-
-    # {단어 : count} 형태의 딕셔너리 반환합니다.
-    vocab = get_vocabulary(infile)
-    # 단어를 음절별로 나누기, 단어의 마지막 음절에는 </w>를 붙입니다.
-    vocab = dict([(tuple(x[:-1]) + (x[-1] + "</w>",), y) for (x, y) in vocab.items()])
-    # 단어를 count 기준으로 내림차순 정렬합니다.
-    sorted_vocab = sorted(vocab.items(), key=lambda x: x[1], reverse=True)
-
-    # stats : {[token1, token2]:count}, indices {[token1,token2]:{1번단어:count, 2번단어:count}}
-    # stats는 특정 단어 페어가 등장한 총 수, indices는 해당 단어 페어가 등장한 위치
-    stats, indices = get_pair_statistics(sorted_vocab)
-
-    for i in range(args.num_symbols):
-        # 가장 빈도가 높은 pair 획득
-        if stats:
-            most_frequent = max(stats, key=lambda x: stats[x])
-
-        # 모든 pair들이 최소 빈도수 이하일 경우 종료
-        if stats[most_frequent] < args.min_frequency:
-            print('no pair has frequency >= {0}. Stopping\n'.format(args.min_frequency))
-            break
-
-        # 진행상황 보여주기
-        if args.verbose == "true":
-            print('pair {0}: {1} {2} -> {1}{2} (frequency {3})\n'.format(
-                i, most_frequent[0], most_frequent[1], stats[most_frequent]))
-
-        output.append(most_frequent)
-        changes = replace_pair(most_frequent, sorted_vocab, indices)
-        update_pair_statistics(most_frequent, changes, stats, indices)
-
-    infile.close()
-
-    return output
-
-def get_vocabulary(file):
-    vocab = Counter()
-    for line in file:
-        doc = json.loads(line)
-        for word in doc['nl_s'].strip("\r\n ").split(' '):
-            if word:
-                vocab[word] += 1
-        for col in doc['col_s']:
-            for word in col.strip("\r\n ").split(' '):
-                if word:
-                    vocab[word] += 1
-    return vocab
-
-def get_pair_statistics(file):
-    stats = defaultdict(int)
-    # dict 안의 dict, {key : {key : value}} 구조, {(prev_char, char) : {1 : 1}}
-    indices = defaultdict(lambda: defaultdict(int))
-
-    for i, (word, freq) in enumerate(file):
-        prev_char = word[0]
-        for char in word[1:]:
-            stats[prev_char, char] += freq
-            indices[prev_char, char][i] += 1
-            prev_char = char
-    return stats, indices
-
-def replace_pair(pair, vocab, indices):
-    """('a','b')페어를 ('ab')페어로 바꾸기 위한 [문장위치, ('ab') ('a','b'), 빈도수] 리스트 반환 """
-    first, second = pair
-    pair_str = ''.join(pair)
-    pair_str = pair_str.replace('\\', '\\\\')
-    changes = []
-    pattern = re.compile(r'(?<!\S)' + re.escape(first + ' ' + second) + r'(?!\S)')
-    iterator = indices[pair].items()
-    for j, freq in iterator:
-        if freq < 1:
-            continue
-        word, freq = vocab[j]
-        new_word = ' '.join(word)
-        new_word = pattern.sub(pair_str, new_word)
-        new_word = tuple(new_word.split(' '))
-
-        vocab[j] = (new_word, freq)
-        changes.append((j, new_word, word, freq))
-    return changes
-
-def update_pair_statistics(pair, change, stats, indices):
-    ''' pair 정보를 stats와 indices에서 삭제, 합쳐진 pair에 대한 모든 정보를 change에서 받아와 '''
-    stats[pair] = 0
-    indices[pair] = defaultdict(int)
-    first, second = pair
-    new_pair = first + second
-    for j, word, old_word, freq in change:
-        # find all instances of pair, and update frequency/indices around it
-        i = 0
-        while True:
-            # find first symbol
-            try:
-                i = old_word.index(first, i)
-            except ValueError:
-                break
-            # if first symbol is followed by second symbol, we've found an occurrence of pair (old_word[i:i+2])
-            if i < len(old_word) - 1 and old_word[i + 1] == second:
-                # assuming a symbol sequence "A B C", if "B C" is merged, reduce the frequency of "A B"
-                if i:
-                    prev = old_word[i - 1:i + 1]
-                    stats[prev] -= freq
-                    indices[prev][j] -= 1
-                if i < len(old_word) - 2:
-                    # assuming a symbol sequence "A B C B", if "B C" is merged, reduce the frequency of "C B".
-                    # however, skip this if the sequence is A B C B C, because the frequency of "C B" will be reduced by the previous code block
-                    if old_word[i + 2] != first or i >= len(old_word) - 3 or old_word[i + 3] != second:
-                        nex = old_word[i + 1:i + 3]
-                        stats[nex] -= freq
-                        indices[nex][j] -= 1
-                i += 2
-            else:
-                i += 1
-
-        i = 0
-        while True:
-            try:
-                # find new pair
-                i = word.index(new_pair, i)
-            except ValueError:
-                break
-            # assuming a symbol sequence "A BC D", if "B C" is merged, increase the frequency of "A BC"
-            if i:
-                prev = word[i - 1:i + 1]
-                stats[prev] += freq
-                indices[prev][j] += 1
-            # assuming a symbol sequence "A BC B", if "B C" is merged, increase the frequency of "BC B"
-            # however, if the sequence is A BC BC, skip this step because the count of "BC BC" will be incremented by the previous code block
-            if i < len(word) - 1 and word[i + 1] != new_pair:
-                nex = word[i:i + 2]
-                stats[nex] += freq
-                indices[nex][j] += 1
-            i += 1
-
-def save_rule_file(file, args):
-    outfile = open(args.rule_file, "w", encoding="utf-8")
-    for most_frequent in file:
-        outfile.write('{0} {1}\n'.format(*most_frequent))
-
 def apply_bpe(args):
+    if os.path.isdir(os.path.join(os.getcwd(), "preprocess/bpe")):
+        pass
+    else:
+        os.mkdir(os.path.join(os.getcwd(), "preprocess/bpe"))
     types = ["train", "dev", "test"]
     for type in types:
-        infile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_s.jsonl"), "r", encoding="utf-8")
-        outfile = open(os.path.join(os.getcwd(), "preprocess/" + type + "_sb_" + str(args.merges) + ".jsonl"), "w", encoding="utf-8")
+        infile = open(os.path.join(os.getcwd(), "preprocess/stanford/" + type + "_s.jsonl"), "r", encoding="utf-8")
+        outfile = open(os.path.join(os.getcwd(), "preprocess/bpe/" + type + "_sb_" + str(args.merges) + ".jsonl"), "w", encoding="utf-8")
         for line in infile:
             doc = json.loads(line)
             doc['nl_sb'] = bpe_process_line(doc['nl_s'], args)
@@ -194,36 +40,13 @@ def apply_bpe(args):
             outfile.write("\n")
 
 def bpe_process_line(line, args):
-    '''
-    out = "왼쪽 공백" + self.segment + "오른쪽 공백"
-    오른쪽 공백의 if문이 2가지 조건을 가지는 이유는
-    1. segment로 나눌 line이 있는 경우는 공백만 계산하면 되고
-    2. line이 공백인 경우 왼쪽공백을 구하는 쪽에서 모든 공백을 이미 계산하기 때문이다.
-    '''
-    out = ""
-
-    leading_whitespace = len(line) - len(line.lstrip("\r\n "))
-    if leading_whitespace:
-        out += line[:leading_whitespace]
-
-    out += segment(line, args)
-
-    trailing_whitespace = len(line) - len(line.rstrip('\r\n '))
-    if trailing_whitespace and trailing_whitespace != len(line):
-        out += line[-trailing_whitespace:]
-
-    return out
-
-def segment(line, args):
-    '''
-    line의 앞뒤 공백을 제거한 후 space로 분할한 token을 segment_token 함수에 전달
-    '''
+    ''' line의 앞뒤 공백을 제거한 후 space로 분할한 token을 segment_token 함수에 전달 '''
     segments = segment_tokens(line.strip('\r\n ').split(' '), args)
     return ' '.join(segments)
 
 def segment_tokens(tokens, args):
     # rule 파일로부터 merge 갯수만큼 모든 규칙을 얻는다. merge가 -1이면 모든 규칙을 사용한다.
-    rule = open(args.rule_file, 'r', encoding='utf-8')
+    rule = open(args.rule_infile, 'r', encoding='utf-8')
     bpe_rules = [tuple(item.strip('\r\n ').split(' ')) for (n, item) in enumerate(rule) if (args.merges == -1 or n < args.merges)]
 
     # { ('a','b'): 9999 ~ ('c','d'): 0 }
@@ -234,7 +57,7 @@ def segment_tokens(tokens, args):
     args.bpe_rules_reverse = dict([(pair[0] + pair[1], pair) for pair, i in args.bpe_rules.items()])
 
     # subword로 쪼개지지 않을 단어 집합(회사에서 voca라고 부르는 항목)
-    args.glossaries = open(args.glossaries_path, 'r', encoding='utf-8').readlines()
+    args.glossaries = open(args.glossaries_infile, 'r', encoding='utf-8').readlines()
     args.glossaries_regex = re.compile('^({})$'.format('|'.join(args.glossaries) + "|" + "|".join(["__" + word for word in args.glossaries]))) if args.glossaries else None
 
     output = []
@@ -312,7 +135,7 @@ def encode(token, args):
         '''
         # dropout을 고려하고(and) pair가 bpe_codes에 있는 (bpe_codes[pair], i, pair) list comprehension
         # get list of symbol pairs; optionally apply dropout
-        pairs = [(args.bpe_rules[pair],i,pair) for (i,pair) in enumerate(zip(word, word[1:])) if (not args.dropout or random.random() > args.dropout) and pair in args.bpe_rules]
+        pairs = [(args.bpe_rules[pair],i,pair) for (i,pair) in enumerate(zip(word, word[1:])) if pair in args.bpe_rules]
 
         # pairs가 빈 리스트면 break
         if not pairs:
@@ -345,11 +168,6 @@ def encode(token, args):
         word[-1] = word[-1][:-4]
 
     word = tuple(word)
-    # vocab = read_vocabulary(open(args.voca, 'r', encoding='utf-8'))
-    # if vocab:
-    #     word = check_vocab_and_split(word, args.bpe_rules_reverse, vocab, args.separator)
-
-    # cache[orig] = word
     return word
 
 def recursive_split(segment, bpe_codes, vocab, separator, final=False):
@@ -419,11 +237,6 @@ def read_vocabulary(vocab_file):
 if __name__ == "__main__":
     args = set_hyperparameters()
     print("set hyperparameter")
-    if args.get_rules == "True":
-        rules = learn_bpe(args)
-        print("get rules")
-        save_rule_file(rules, args)
-        print("save rules")
     apply_bpe(args)
     print("apply bpe")
     print("Done.")
